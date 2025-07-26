@@ -447,7 +447,6 @@ function NewEntryPageComponent() {
       const supabase = createClient();
       const {
         data: { user },
-        error: userError,
       } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("journal_entries")
