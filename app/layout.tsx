@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Inter, Cinzel, Crimson_Text } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import GlobalHeader from "@/components/global-header";
+import ProtectedLayout from "@/components/protected-layout";
 import "./globals.css";
 
 // const defaultUrl = process.env.VERCEL_URL
@@ -39,7 +41,8 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <GlobalHeader />
+          <ProtectedLayout>{children}</ProtectedLayout>
         </ThemeProvider>
       </body>
     </html>

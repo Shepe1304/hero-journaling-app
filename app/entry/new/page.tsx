@@ -14,9 +14,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  ArrowLeft,
-  Save,
-  Sparkles,
   ImageIcon,
   Smile,
   Meh,
@@ -142,11 +139,6 @@ const UI_TEXT = {
   markdownGuideTitle: "Markdown Guide",
 } as const;
 
-const NAVIGATION_PATHS = {
-  dashboard: "/dashboard",
-  generateChapter: "/chapter/generate",
-} as const;
-
 // ================================
 // UTILITY FUNCTIONS
 // ================================
@@ -210,79 +202,14 @@ const setCursorPosition = (textareaId: string, position: number): void => {
   }, 0);
 };
 
-const navigateTo = (path: string): void => {
-  window.location.href = path;
-};
-
 const getCharacterCount = (text: string): number => text.length;
-
-const validateEntryContent = (content: string): boolean => {
-  return content.trim().length > 0;
-};
 
 // ================================
 // SUB-COMPONENTS
 // ================================
-interface PageHeaderProps {
-  onBack: () => void;
-  onSave: () => void;
-  onGenerateChapter: () => void;
-  isGenerating: boolean;
-  canGenerate: boolean;
+interface MarkdownToolbarProps {
+  onInsertMarkdown: (before: string, after?: string) => void;
 }
-
-const PageHeader: React.FC<PageHeaderProps> = ({
-  onBack,
-  onSave,
-  onGenerateChapter,
-  isGenerating,
-  canGenerate,
-}) => (
-  <div className="border-b border-amber-200 bg-white/80 backdrop-blur-sm">
-    <div className="max-w-4xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="mr-4 text-amber-700 hover:text-amber-900 hover:bg-amber-100"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {UI_TEXT.backButton}
-          </Button>
-          <div>
-            <h1 className="font-cinzel text-3xl font-bold text-amber-900">
-              {UI_TEXT.title}
-            </h1>
-            <p className="font-crimson text-amber-700 mt-1">
-              {UI_TEXT.subtitle}
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={onSave}
-            className="border-amber-300 text-amber-700 hover:bg-amber-50 font-crimson bg-transparent"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {UI_TEXT.saveDraftButton}
-          </Button>
-          <Button
-            onClick={onGenerateChapter}
-            disabled={isGenerating || !canGenerate}
-            className="bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700 font-crimson"
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
-            {isGenerating
-              ? UI_TEXT.generatingText
-              : UI_TEXT.generateChapterButton}
-          </Button>
-        </div>
-      </div>
-    </div>
-  </div>
-);
 
 const MarkdownToolbar: React.FC<MarkdownToolbarProps> = ({
   onInsertMarkdown,
@@ -500,7 +427,6 @@ const useEntryForm = () => {
     mood: "",
     image: null,
   });
-  const [isGenerating, setIsGenerating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
   const updateContent = (content: string) => {
@@ -528,9 +454,7 @@ const useEntryForm = () => {
 
   return {
     formData,
-    isGenerating,
     showPreview,
-    setIsGenerating,
     setShowPreview,
     updateContent,
     updateMood,
@@ -545,9 +469,7 @@ const useEntryForm = () => {
 function NewEntryPageComponent() {
   const {
     formData,
-    isGenerating,
     showPreview,
-    setIsGenerating,
     setShowPreview,
     updateContent,
     updateMood,
@@ -555,48 +477,10 @@ function NewEntryPageComponent() {
     insertMarkdown,
   } = useEntryForm();
 
-  const handleBack = () => {
-    navigateTo(NAVIGATION_PATHS.dashboard);
-  };
-
-  const handleSave = async () => {
-    // TODO: Integrate with your backend/database
-    alert("Entry saved as draft!");
-  };
-
-  const handleGenerateChapter = async () => {
-    if (!validateEntryContent(formData.content)) {
-      alert("Please write your entry first!");
-      return;
-    }
-
-    setIsGenerating(true);
-
-    try {
-      // TODO: Integrate with your AI service
-      setTimeout(() => {
-        setIsGenerating(false);
-        navigateTo(NAVIGATION_PATHS.generateChapter);
-      }, 2000);
-    } catch (error) {
-      console.error("Error generating chapter:", error);
-      setIsGenerating(false);
-    }
-  };
-
-  const canGenerate = validateEntryContent(formData.content);
   const characterCount = getCharacterCount(formData.content);
 
   return (
     <div className="min-h-screen parchment-bg">
-      <PageHeader
-        onBack={handleBack}
-        onSave={handleSave}
-        onGenerateChapter={handleGenerateChapter}
-        isGenerating={isGenerating}
-        canGenerate={canGenerate}
-      />
-
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Editor */}
