@@ -14,14 +14,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
-  ArrowLeft,
-  Save,
   Edit,
   Eye,
-  Sparkles,
-  Trash2,
-  Calendar,
-  Clock,
   Bold,
   Italic,
   List,
@@ -32,6 +26,7 @@ import {
   Heart,
   Zap,
   Moon,
+  Trash2,
 } from "lucide-react";
 
 const moods = [
@@ -86,24 +81,7 @@ export default function EntryPage(
 ) {
   const [entry, setEntry] = useState(mockEntry.content);
   const [selectedMood, setSelectedMood] = useState(mockEntry.mood);
-  const [isEditing, setIsEditing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const handleBack = () => {
-    window.location.href = "/dashboard";
-  };
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsSaving(false);
-      setIsEditing(false);
-      alert("Entry saved successfully!");
-    }, 1000);
-  };
 
   const handleDelete = () => {
     if (
@@ -115,15 +93,6 @@ export default function EntryPage(
       alert("Entry deleted!");
       window.location.href = "/dashboard";
     }
-  };
-
-  const handleGenerateChapter = () => {
-    setIsGenerating(true);
-    // Simulate AI processing
-    setTimeout(() => {
-      setIsGenerating(false);
-      window.location.href = "/chapter/generate";
-    }, 2000);
   };
 
   const insertMarkdown = (before: string, after = "") => {
@@ -204,99 +173,6 @@ export default function EntryPage(
 
   return (
     <div className="min-h-screen parchment-bg">
-      {/* Header */}
-      <div className="border-b border-amber-200 bg-white/80 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                onClick={handleBack}
-                className="mr-4 text-amber-700 hover:text-amber-900 hover:bg-amber-100"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-              <div>
-                <h1 className="font-cinzel text-3xl font-bold text-amber-900">
-                  {mockEntry.title}
-                </h1>
-                <div className="flex items-center gap-4 mt-1">
-                  <div className="flex items-center text-amber-700 font-crimson">
-                    <Calendar className="w-4 h-4 mr-1" />
-                    {new Date(mockEntry.date).toLocaleDateString("en-US", {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </div>
-                  <div className="flex items-center text-amber-600 font-crimson text-sm">
-                    <Clock className="w-3 h-3 mr-1" />
-                    Last updated:{" "}
-                    {new Date(mockEntry.updatedAt).toLocaleTimeString("en-US", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              {!isEditing ? (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsEditing(true)}
-                    className="border-amber-300 text-amber-700 hover:bg-amber-50 font-crimson bg-transparent"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit
-                  </Button>
-                  {mockEntry.hasChapter ? (
-                    <Button
-                      onClick={() =>
-                        (window.location.href = `/chapter/${mockEntry.id}`)
-                      }
-                      className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 font-crimson"
-                    >
-                      View Chapter
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleGenerateChapter}
-                      disabled={isGenerating}
-                      className="bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700 font-crimson"
-                    >
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      {isGenerating ? "Generating..." : "Generate Chapter"}
-                    </Button>
-                  )}
-                </>
-              ) : (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsEditing(false)}
-                    className="border-amber-300 text-amber-700 hover:bg-amber-50 font-crimson bg-transparent"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 font-crimson"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    {isSaving ? "Saving..." : "Save Changes"}
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -305,9 +181,9 @@ export default function EntryPage(
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="font-cinzel text-xl text-amber-900">
-                    {isEditing ? "Edit Your Story" : "Your Story"}
+                    {showPreview ? "Edit Your Story" : "Your Story"}
                   </CardTitle>
-                  {isEditing && (
+                  {showPreview && (
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
@@ -350,7 +226,7 @@ export default function EntryPage(
                 </div>
               </CardHeader>
               <CardContent>
-                {isEditing ? (
+                {showPreview ? (
                   <Tabs
                     value={showPreview ? "preview" : "write"}
                     onValueChange={(value) =>
@@ -400,7 +276,7 @@ export default function EntryPage(
                   </div>
                 )}
 
-                {isEditing && (
+                {showPreview && (
                   <div className="mt-4 text-sm text-amber-600 font-crimson">
                     {entry.length} characters • Use markdown formatting to
                     enhance your story
@@ -457,7 +333,7 @@ export default function EntryPage(
             </Card>
 
             {/* Mood Selector (only in edit mode) */}
-            {isEditing && (
+            {showPreview && (
               <Card className="chapter-card border-amber-200">
                 <CardHeader>
                   <CardTitle className="font-cinzel text-lg text-amber-900">
@@ -497,7 +373,7 @@ export default function EntryPage(
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {!isEditing && (
+                {!showPreview && (
                   <>
                     <Button
                       variant="outline"
@@ -523,7 +399,7 @@ export default function EntryPage(
                     </Button>
                   </>
                 )}
-                {isEditing && (
+                {showPreview && (
                   <div className="bg-amber-50 p-3 rounded border border-amber-200">
                     <p className="text-xs text-amber-700 font-crimson">
                       💡 <strong>Tip:</strong> Use markdown formatting to make
@@ -536,7 +412,7 @@ export default function EntryPage(
             </Card>
 
             {/* Markdown Guide (only in edit mode) */}
-            {isEditing && (
+            {showPreview && (
               <Card className="chapter-card border-amber-200">
                 <CardHeader>
                   <CardTitle className="font-cinzel text-lg text-amber-900">

@@ -202,10 +202,10 @@ export default function StorybookPage() {
               <CardHeader className="p-0">
                 <div className="relative">
                   <Image
-                    src={chapter.coverArt ?? "/placeholder.svg"}
-                    alt={chapter.title || "Chapter cover"}
+                    src={chapter.coverArt || "/placeholder.svg"}
+                    alt={chapter.title ?? "Chapter cover"}
                     width={500}
-                    height={192} // needed for Next Image to avoid layout shift
+                    height={192}
                     className="w-full h-48 object-cover rounded-t-lg"
                   />
 

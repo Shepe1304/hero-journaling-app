@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Calendar,
   List,
-  Plus,
   BookOpen,
   Smile,
   Meh,
@@ -138,10 +137,6 @@ const navigateToEntry = (entryId: number, edit = false): void => {
   window.location.href = `/entry/${entryId}${editParam}`;
 };
 
-const navigateToNewEntry = (): void => {
-  window.location.href = "/entry/new";
-};
-
 // ================================
 // SUB-COMPONENTS
 // ================================
@@ -236,34 +231,6 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, onView, onEdit }) => (
   </div>
 );
 
-interface DashboardHeaderProps {
-  onNewEntry: () => void;
-}
-
-const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onNewEntry }) => (
-  <div className="border-b border-amber-200 bg-white/80 backdrop-blur-sm">
-    <div className="max-w-6xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-cinzel text-3xl font-bold text-amber-900">
-            Your Epic Journey
-          </h1>
-          <p className="font-crimson text-amber-700 mt-1">
-            Chronicle your adventures, hero
-          </p>
-        </div>
-        <Button
-          onClick={onNewEntry}
-          className="bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700 font-crimson"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          New Entry
-        </Button>
-      </div>
-    </div>
-  </div>
-);
-
 interface StatsGridProps {
   stats: DashboardStats;
 }
@@ -334,8 +301,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen parchment-bg">
-      <DashboardHeader onNewEntry={navigateToNewEntry} />
-
       <div className="max-w-6xl mx-auto px-4 py-8">
         <StatsGrid stats={stats} />
 

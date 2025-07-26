@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Share, Volume2, Edit, BookOpen } from "lucide-react";
+import { Volume2, Edit, BookOpen } from "lucide-react";
 import NarrationPlayer from "@/components/narration-player";
 import React from "react";
 
@@ -108,17 +108,8 @@ export default function ChapterPage({ params }: { params: Promise<{ id: string }
     );
   }
 
-  const handleBack = () => {
-    window.location.href = "/storybook";
-  };
-
   const handlePlayNarration = () => {
     setShowNarrationPlayer(true);
-  };
-
-  const handleShare = () => {
-    // Implement sharing functionality
-    alert("Sharing functionality coming soon!");
   };
 
   const handleEditOriginal = () => {
@@ -154,60 +145,6 @@ export default function ChapterPage({ params }: { params: Promise<{ id: string }
 
   return (
     <div className="min-h-screen parchment-bg">
-      {/* Header */}
-      <div className="border-b border-amber-200 bg-white/80 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                onClick={handleBack}
-                className="mr-4 text-amber-700 hover:text-amber-900 hover:bg-amber-100"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Storybook
-              </Button>
-              <div>
-                <h1 className="font-cinzel text-3xl font-bold text-amber-900">
-                  {chapter.title}
-                </h1>
-                <div className="flex items-center gap-4 mt-1">
-                  <p className="font-crimson text-amber-700">
-                    {new Date(chapter.date).toLocaleDateString("en-US", {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </p>
-                  <span className="text-amber-600">•</span>
-                  <p className="font-crimson text-amber-600">
-                    {chapter.readTime} read
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleShare}
-                className="border-amber-300 text-amber-700 hover:bg-amber-50 font-crimson bg-transparent"
-              >
-                <Share className="w-4 h-4 mr-2" />
-                Share
-              </Button>
-              <Button
-                onClick={handlePlayNarration}
-                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 font-crimson"
-              >
-                <Volume2 className="w-4 h-4 mr-2" />
-                Listen
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Chapter Content */}
