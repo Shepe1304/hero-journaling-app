@@ -81,7 +81,9 @@ The weather was perfect - cool and overcast. I started conservatively but felt s
   hasChapter: true,
 };
 
-export default function EntryPage({ params }: { params: { id: string } }) {
+export default function EntryPage(
+  // { params }: { params: { id: string } }
+) {
   const [entry, setEntry] = useState(mockEntry.content);
   const [selectedMood, setSelectedMood] = useState(mockEntry.mood);
   const [isEditing, setIsEditing] = useState(false);
