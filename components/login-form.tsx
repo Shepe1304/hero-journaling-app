@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Mail, Lock, Scroll } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -291,7 +291,7 @@ const useLoginForm = (
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+  // const router = useRouter();
   const supabase = getSupabaseClient();
 
   const updateField = (field: keyof LoginFormData) => (value: string) => {
@@ -325,7 +325,8 @@ const useLoginForm = (
       // onSuccess?.();
 
       // Navigate to redirect path
-      router.push(redirectTo || FORM_CONFIG.defaultRedirectPath);
+      // router.push(redirectTo || FORM_CONFIG.defaultRedirectPath);
+      window.location.assign(redirectTo || FORM_CONFIG.defaultRedirectPath);
     } catch (err) {
       setError(formatAuthError(err));
     } finally {
