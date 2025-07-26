@@ -3,15 +3,14 @@ import { Geist, Inter, Cinzel, Crimson_Text } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
+// const defaultUrl = process.env.VERCEL_URL
+//   ? `https://${process.env.VERCEL_URL}`
+//   : "http://localhost:3000";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(defaultUrl),
-  title: "Next.js and Supabase Starter Kit",
-  description: "The fastest way to build apps with Next.js and Supabase",
-};
+  title: "Odyscribe - Write Your Life as an Epic Journey",
+  description: "Transform your everyday journal entries into chapters of an epic Hero's Journey",
+}
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const cinzel = Cinzel({ subsets: ["latin"], variable: "--font-cinzel" });
