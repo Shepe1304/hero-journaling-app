@@ -18,7 +18,7 @@ interface LoginFormData {
 }
 
 interface LoginFormProps {
-  onSuccess?: () => void;
+  // onSuccess?: () => void;
   redirectTo?: string;
   className?: string;
   showSignUpLink?: boolean;
@@ -35,10 +35,10 @@ interface FormFieldProps {
   disabled?: boolean;
 }
 
-interface AuthErrorType {
-  message: string;
-  status?: number;
-}
+// interface AuthErrorType {
+//   message: string;
+//   status?: number;
+// }
 
 // ================================
 // CONSTANTS & CONFIGURATION
@@ -283,7 +283,9 @@ const AuthFooter: React.FC<AuthFooterProps> = ({
 // ================================
 // CUSTOM HOOKS
 // ================================
-const useLoginForm = (redirectTo?: string, onSuccess?: () => void) => {
+const useLoginForm = (redirectTo?: string
+  // , onSuccess?: () => void
+) => {
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
     password: "",
@@ -321,7 +323,7 @@ const useLoginForm = (redirectTo?: string, onSuccess?: () => void) => {
       if (authError) throw authError;
 
       // Call success callback if provided
-      onSuccess?.();
+      // onSuccess?.();
 
       // Navigate to redirect path
       router.push(redirectTo || FORM_CONFIG.defaultRedirectPath);
@@ -368,7 +370,7 @@ const useLoginForm = (redirectTo?: string, onSuccess?: () => void) => {
 // MAIN COMPONENT
 // ================================
 export const LoginForm: React.FC<LoginFormProps> = ({
-  onSuccess,
+  // onSuccess,
   redirectTo,
   className = "",
   showSignUpLink = true,
@@ -380,7 +382,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     updateField,
     handleLogin,
     handleGoogleAuth,
-  } = useLoginForm(redirectTo, onSuccess);
+  } = useLoginForm(redirectTo
+    // , onSuccess
+  );
 
   return (
     <Card

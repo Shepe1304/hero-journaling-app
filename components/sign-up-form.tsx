@@ -20,7 +20,7 @@ interface SignUpFormData {
 }
 
 interface SignUpFormProps {
-  onSuccess?: () => void;
+  // onSuccess?: () => void;
   redirectTo?: string;
   className?: string;
 }
@@ -36,10 +36,10 @@ interface FormFieldProps {
   disabled?: boolean;
 }
 
-interface AuthErrorType {
-  message: string;
-  status?: number;
-}
+// interface AuthErrorType {
+//   message: string;
+//   status?: number;
+// }
 
 // ================================
 // CONSTANTS & CONFIGURATION
@@ -323,7 +323,7 @@ const useSignUpForm = (redirectTo?: string) => {
 // MAIN COMPONENT
 // ================================
 export const SignUpForm: React.FC<SignUpFormProps> = ({
-  onSuccess,
+  // onSuccess,
   redirectTo,
   className = "",
 }) => {
