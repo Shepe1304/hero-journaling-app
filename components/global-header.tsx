@@ -103,7 +103,13 @@ export default function GlobalHeader() {
           <div className="flex items-center justify-between">
             {/* Logo and Brand */}
             <div className="flex items-center space-x-8">
-              <Link href="/dashboard" className="flex items-center space-x-2">
+              <Link
+                href="/dashboard"
+                className="flex items-center space-x-2"
+                onClick={() => {
+                  window.location.assign("/dashboard");
+                }}
+              >
                 <BookOpen className="w-8 h-8 text-amber-700" />
                 <span className="font-cinzel text-2xl font-bold text-amber-900">
                   Odyscribe
@@ -206,7 +212,13 @@ export default function GlobalHeader() {
       <div className="md:hidden border-b border-amber-200 bg-white/90 backdrop-blur-sm sticky top-0 z-40">
         <div className="px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/dashboard" className="flex items-center space-x-2">
+            <Link
+              href="/dashboard"
+              className="flex items-center space-x-2"
+              onClick={() => {
+                window.location.assign("/dashboard");
+              }}
+            >
               <BookOpen className="w-6 h-6 text-amber-700" />
               <span className="font-cinzel text-xl font-bold text-amber-900">
                 Odyscribe

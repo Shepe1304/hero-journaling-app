@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-// import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Mail, Lock, Scroll } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,6 @@ interface LoginFormData {
 }
 
 interface LoginFormProps {
-  // onSuccess?: () => void;
   redirectTo?: string;
   className?: string;
   showSignUpLink?: boolean;
@@ -34,11 +32,6 @@ interface FormFieldProps {
   required?: boolean;
   disabled?: boolean;
 }
-
-// interface AuthErrorType {
-//   message: string;
-//   status?: number;
-// }
 
 // ================================
 // CONSTANTS & CONFIGURATION
@@ -95,7 +88,6 @@ const validateForm = (formData: LoginFormData): string | null => {
 
 const formatAuthError = (error: unknown): string => {
   if (error instanceof Error) {
-    // Handle specific Supabase auth errors
     switch (error.message) {
       case "Invalid login credentials":
         return ERROR_MESSAGES.invalidCredentials;
@@ -113,6 +105,23 @@ const formatAuthError = (error: unknown): string => {
 };
 
 const getSupabaseClient = () => createClient();
+
+// ================================
+// IMPROVED REDIRECT UTILITY
+// ================================
+const handleRedirect = (path: string) => {
+  // Try Next.js router first
+  if (typeof window !== "undefined") {
+    try {
+      // Use window.location for more reliable redirects in production
+      window.location.href = path;
+    } catch (error) {
+      console.error("Redirect failed:", error);
+      // Fallback to window.location.assign
+      window.location.assign(path);
+    }
+  }
+};
 
 // ================================
 // SUB-COMPONENTS
@@ -214,17 +223,6 @@ const AuthButton: React.FC<AuthButtonProps> = ({
       {children}
     </Button>
   );
-
-  return (
-    <Button
-      type={type}
-      onClick={onClick}
-      className={combinedClasses}
-      disabled={isLoading || disabled}
-    >
-      {children}
-    </Button>
-  );
 };
 
 const AuthDivider: React.FC<{ text?: string }> = ({
@@ -281,22 +279,17 @@ const AuthFooter: React.FC<AuthFooterProps> = ({
 // ================================
 // CUSTOM HOOKS
 // ================================
-const useLoginForm = (
-  redirectTo?: string
-  // , onSuccess?: () => void
-) => {
+const useLoginForm = (redirectTo?: string) => {
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
     password: "",
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  // const router = useRouter();
   const supabase = getSupabaseClient();
 
   const updateField = (field: keyof LoginFormData) => (value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
     if (error) setError(null);
   };
 
@@ -305,7 +298,6 @@ const useLoginForm = (
     setIsLoading(true);
     setError(null);
 
-    // Validate form
     const validationError = validateForm(formData);
     if (validationError) {
       setError(validationError);
@@ -321,12 +313,12 @@ const useLoginForm = (
 
       if (authError) throw authError;
 
-      // Call success callback if provided
-      // onSuccess?.();
+      // Wait a moment for auth state to update
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // Navigate to redirect path
-      // router.push(redirectTo || FORM_CONFIG.defaultRedirectPath);
-      window.location.assign(redirectTo || FORM_CONFIG.defaultRedirectPath);
+      // Use the improved redirect function
+      const targetPath = redirectTo || FORM_CONFIG.defaultRedirectPath;
+      handleRedirect(targetPath);
     } catch (err) {
       setError(formatAuthError(err));
     } finally {
@@ -370,7 +362,6 @@ const useLoginForm = (
 // MAIN COMPONENT
 // ================================
 export const LoginForm: React.FC<LoginFormProps> = ({
-  // onSuccess,
   redirectTo,
   className = "",
   showSignUpLink = true,
@@ -382,10 +373,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     updateField,
     handleLogin,
     handleGoogleAuth,
-  } = useLoginForm(
-    redirectTo
-    // , onSuccess
-  );
+  } = useLoginForm(redirectTo);
 
   return (
     <Card
