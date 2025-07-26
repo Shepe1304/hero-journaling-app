@@ -110,25 +110,24 @@ export default function EntryPage({
     }
   };
 
-  // Save handler
   const handleSave = async () => {
-    const res = await fetch(`/api/entries/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const { error } = await supabase
+      .from("journal_entries")
+      .update({
         title,
         content: entry,
         mood: selectedMood,
-        is_draft: !hasChapter,
-      }),
-    });
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
 
-    if (!res.ok) {
+    if (error) {
+      console.error(error);
       alert("Failed to save changes.");
-      return;
+    } else {
+      alert("Changes saved!");
+      setShowPreview(false);
     }
-    alert("Changes saved!");
-    setShowPreview(false); // Go back to view mode
   };
 
   const insertMarkdown = (before: string, after = "") => {

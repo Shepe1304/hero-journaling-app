@@ -26,6 +26,7 @@ import {
   List,
   Link,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 // ================================
 // TYPES & INTERFACES
@@ -443,27 +444,26 @@ function NewEntryPageComponent() {
 
     setIsSaving(true);
     try {
-      const res = await fetch("/api/entries", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: formData.title,
+      const supabase = createClient();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      const { data, error } = await supabase
+        .from("journal_entries")
+        .insert({
+          title: formData.title || "Untitled Entry",
           content: formData.content,
           mood: formData.mood,
-        }),
-      });
+          user_id: user?.id,
+        })
+        .select()
+        .single();
 
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to save entry");
-      }
+      if (error) throw new Error(error.message);
 
-      const data = await res.json();
       console.log("Entry saved:", data);
       alert("Entry saved successfully!");
-      // Optionally redirect:
       window.location.href = `/entry/${data.id}`;
     } catch (err) {
       console.error(err);
