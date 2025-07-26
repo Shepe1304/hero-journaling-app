@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,7 +27,10 @@ import {
   Zap,
   Moon,
   Trash2,
+  Save,
+  X,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 const moods = [
   { value: "happy", label: "Happy", icon: Smile, color: "text-yellow-500" },
@@ -48,50 +51,82 @@ const moods = [
   },
 ];
 
-// Mock data - in real app this would come from API/database
-const mockEntry = {
-  id: 1,
-  title: "The Marathon Victory",
-  content: `# My First Marathon
-
-Today I finally completed my **first marathon**! The feeling of crossing the finish line was *incredible*.
-
-## The Journey
-I trained for months and there were times I wanted to quit, but I pushed through:
-- Early morning runs at 5 AM
-- Weekend long runs up to 20 miles  
-- Dealing with sore muscles and fatigue
-- Fighting through self-doubt
-
-## The Race Day
-The weather was perfect - cool and overcast. I started conservatively but felt strong throughout. At mile 20, I knew I was going to make it.
-
-**All the training paid off!** I feel like I can accomplish anything now.
-
-[My running tracker](https://example.com/run) shows I finished in 4:12:33.`,
-  mood: "happy",
-  date: "2024-01-15",
-  createdAt: "2024-01-15T08:30:00Z",
-  updatedAt: "2024-01-15T08:30:00Z",
-  hasChapter: true,
-};
-
-export default function EntryPage(
-  // { params }: { params: { id: string } }
-) {
-  const [entry, setEntry] = useState(mockEntry.content);
-  const [selectedMood, setSelectedMood] = useState(mockEntry.mood);
+export default function EntryPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  const supabase = createClient();
+  const [entry, setEntry] = useState<string>("");
+  const [title, setTitle] = useState<string>("");
+  const [selectedMood, setSelectedMood] = useState<string>("");
+  const [hasChapter, setHasChapter] = useState<boolean>(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleDelete = () => {
+  useEffect(() => {
+    const fetchEntry = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("journal_entries")
+        .select("title, content, mood, has_chapter")
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching entry:", error);
+        alert("Failed to load entry.");
+      } else if (data) {
+        setEntry(data.content || "");
+        setTitle(data.title || "");
+        setSelectedMood(data.mood || "neutral");
+        setHasChapter(data.has_chapter || false);
+      }
+      setLoading(false);
+    };
+
+    fetchEntry();
+  }, [id]);
+
+  const handleDelete = async () => {
     if (
       confirm(
         "Are you sure you want to delete this entry? This action cannot be undone."
       )
     ) {
-      // Simulate API call
-      alert("Entry deleted!");
-      window.location.href = "/dashboard";
+      const { error } = await supabase
+        .from("journal_entries")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+        alert("Failed to delete entry.");
+      } else {
+        alert("Entry deleted!");
+        window.location.href = "/dashboard";
+      }
+    }
+  };
+
+  const handleSave = async () => {
+    const { error } = await supabase
+      .from("journal_entries")
+      .update({
+        title,
+        content: entry,
+        mood: selectedMood,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.error(error);
+      alert("Failed to save changes.");
+    } else {
+      alert("Changes saved!");
+      setShowPreview(false);
     }
   };
 
@@ -113,7 +148,6 @@ export default function EntryPage(
 
     setEntry(newText);
 
-    // Reset cursor position
     setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(
@@ -141,7 +175,7 @@ export default function EntryPage(
       )
       .replace(/^- (.*$)/gim, '<li class="ml-4 mb-1">• $1</li>')
       .replace(
-        /\[([^\]]+)\]$$([^)]+)$$/g,
+        /\[([^\]]+)\]\(([^)]+)\)/g,
         '<a href="$2" class="text-amber-600 underline hover:text-amber-800">$1</a>'
       )
       .replace(/\n/g, "<br>");
@@ -171,6 +205,12 @@ export default function EntryPage(
     );
   };
 
+  if (loading) {
+    return (
+      <div className="p-8 text-center text-amber-700">Loading entry...</div>
+    );
+  }
+
   return (
     <div className="min-h-screen parchment-bg">
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -181,58 +221,91 @@ export default function EntryPage(
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="font-cinzel text-xl text-amber-900">
-                    {showPreview ? "Edit Your Story" : "Your Story"}
+                    {showPreview ? "Edit Your Story" : title || "Your Story"}
                   </CardTitle>
-                  {showPreview && (
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    {!showPreview ? (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => insertMarkdown("**", "**")}
+                        onClick={() => setShowPreview(true)}
                         className="border-amber-300 text-amber-700 hover:bg-amber-50 bg-transparent"
-                        title="Bold"
                       >
-                        <Bold className="w-3 h-3" />
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => insertMarkdown("*", "*")}
-                        className="border-amber-300 text-amber-700 hover:bg-amber-50 bg-transparent"
-                        title="Italic"
-                      >
-                        <Italic className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => insertMarkdown("- ")}
-                        className="border-amber-300 text-amber-700 hover:bg-amber-50 bg-transparent"
-                        title="List"
-                      >
-                        <List className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => insertMarkdown("[", "](url)")}
-                        className="border-amber-300 text-amber-700 hover:bg-amber-50 bg-transparent"
-                        title="Link"
-                      >
-                        <Link className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  )}
+                    ) : (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => insertMarkdown("**", "**")}
+                          className="border-amber-300 text-amber-700 hover:bg-amber-50 bg-transparent"
+                          title="Bold"
+                        >
+                          <Bold className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => insertMarkdown("*", "*")}
+                          className="border-amber-300 text-amber-700 hover:bg-amber-50 bg-transparent"
+                          title="Italic"
+                        >
+                          <Italic className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => insertMarkdown("- ")}
+                          className="border-amber-300 text-amber-700 hover:bg-amber-50 bg-transparent"
+                          title="List"
+                        >
+                          <List className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => insertMarkdown("[", "](url)")}
+                          className="border-amber-300 text-amber-700 hover:bg-amber-50 bg-transparent"
+                          title="Link"
+                        >
+                          <Link className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          onClick={handleSave}
+                          className="bg-amber-600 hover:bg-amber-700 text-white"
+                          size="sm"
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          Save
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowPreview(false)}
+                          className="border-gray-300 text-gray-700 hover:bg-gray-50 bg-transparent"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
+                {showPreview && (
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Enter a title..."
+                    className="w-full mb-4 p-2 border border-amber-200 rounded-md focus:border-amber-500 font-crimson text-xl"
+                  />
+                )}
+
                 {showPreview ? (
-                  <Tabs
-                    value={showPreview ? "preview" : "write"}
-                    onValueChange={(value) =>
-                      setShowPreview(value === "preview")
-                    }
-                  >
+                  <Tabs defaultValue="write" className="w-full">
                     <TabsList className="mb-4">
                       <TabsTrigger value="write" className="font-crimson">
                         <Edit className="w-4 h-4 mr-2" />
@@ -310,12 +383,12 @@ export default function EntryPage(
                   <Badge
                     variant="outline"
                     className={
-                      mockEntry.hasChapter
+                      hasChapter
                         ? "border-green-300 text-green-700"
                         : "border-amber-300 text-amber-700"
                     }
                   >
-                    {mockEntry.hasChapter ? "Chapter Created" : "Draft"}
+                    {hasChapter ? "Chapter Created" : "Draft"}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between">

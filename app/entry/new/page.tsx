@@ -11,10 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  ImageIcon,
   Smile,
   Meh,
   Frown,
@@ -28,6 +26,7 @@ import {
   List,
   Link,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 // ================================
 // TYPES & INTERFACES
@@ -40,9 +39,9 @@ interface MoodOption {
 }
 
 interface EntryFormData {
+  title: string;
   content: string;
   mood: string;
-  image?: File | null;
 }
 
 interface MarkdownToolbarProps {
@@ -132,9 +131,6 @@ const UI_TEXT = {
   previewPlaceholder: "Start writing to see your preview...",
   moodTitle: "Today's Mood",
   moodPlaceholder: "How are you feeling?",
-  imageTitle: "Add Image",
-  imageUploadText: "Click to upload an image",
-  imageUploadSubtext: "Optional: Add a photo to enhance your story",
   writingTipsTitle: "Writing Tips",
   markdownGuideTitle: "Markdown Guide",
 } as const;
@@ -326,47 +322,6 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({
   </Card>
 );
 
-interface ImageUploaderProps {
-  onImageSelect: (file: File | null) => void;
-}
-
-const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelect }) => {
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] || null;
-    onImageSelect(file);
-  };
-
-  return (
-    <Card className="chapter-card border-amber-200">
-      <CardHeader>
-        <CardTitle className="font-cinzel text-lg text-amber-900">
-          {UI_TEXT.imageTitle}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <label htmlFor="image-upload" className="cursor-pointer">
-          <div className="border-2 border-dashed border-amber-300 rounded-lg p-6 text-center hover:border-amber-400 transition-colors">
-            <ImageIcon className="w-8 h-8 text-amber-400 mx-auto mb-2" />
-            <p className="text-sm text-amber-700 font-crimson">
-              {UI_TEXT.imageUploadText}
-            </p>
-            <p className="text-xs text-amber-600 mt-1">
-              {UI_TEXT.imageUploadSubtext}
-            </p>
-          </div>
-        </label>
-        <Input
-          type="file"
-          accept="image/*"
-          className="hidden"
-          id="image-upload"
-          onChange={handleFileSelect}
-        />
-      </CardContent>
-    </Card>
-  );
-};
-
 const WritingTipsCard: React.FC = () => (
   <Card className="chapter-card border-amber-200">
     <CardHeader>
@@ -423,11 +378,15 @@ const EditorStats: React.FC<EditorStatsProps> = ({ characterCount }) => (
 // ================================
 const useEntryForm = () => {
   const [formData, setFormData] = useState<EntryFormData>({
+    title: "",
     content: "",
     mood: "",
-    image: null,
   });
   const [showPreview, setShowPreview] = useState(false);
+
+  const updateTitle = (title: string) => {
+    setFormData((prev) => ({ ...prev, title }));
+  };
 
   const updateContent = (content: string) => {
     setFormData((prev) => ({ ...prev, content }));
@@ -435,10 +394,6 @@ const useEntryForm = () => {
 
   const updateMood = (mood: string) => {
     setFormData((prev) => ({ ...prev, mood }));
-  };
-
-  const updateImage = (image: File | null) => {
-    setFormData((prev) => ({ ...prev, image }));
   };
 
   const insertMarkdown = (before: string, after = "") => {
@@ -456,9 +411,9 @@ const useEntryForm = () => {
     formData,
     showPreview,
     setShowPreview,
+    updateTitle,
     updateContent,
     updateMood,
-    updateImage,
     insertMarkdown,
   };
 };
@@ -471,13 +426,51 @@ function NewEntryPageComponent() {
     formData,
     showPreview,
     setShowPreview,
+    updateTitle,
     updateContent,
     updateMood,
-    updateImage,
     insertMarkdown,
   } = useEntryForm();
 
   const characterCount = getCharacterCount(formData.content);
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!formData.content || !formData.mood) {
+      alert("Please fill in the content and select a mood.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const { data, error } = await supabase
+        .from("journal_entries")
+        .insert({
+          title: formData.title || "Untitled Entry",
+          content: formData.content,
+          mood: formData.mood,
+          user_id: user?.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw new Error(error.message);
+
+      console.log("Entry saved:", data);
+      alert("Entry saved successfully!");
+      window.location.href = `/entry/${data.id}`;
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="min-h-screen parchment-bg">
@@ -492,9 +485,23 @@ function NewEntryPageComponent() {
                     {UI_TEXT.storyTitle}
                   </CardTitle>
                   <MarkdownToolbar onInsertMarkdown={insertMarkdown} />
+                  <Button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="bg-gradient-to-r from-amber-600 to-yellow-600 text-white font-crimson"
+                  >
+                    {isSaving ? "Saving..." : "Save Entry"}
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent>
+                <input
+                  type="text"
+                  placeholder="Enter a chapter title..."
+                  value={formData.title}
+                  onChange={(e) => updateTitle(e.target.value)}
+                  className="w-full mb-4 p-2 border border-amber-200 rounded-md focus:border-amber-500 font-crimson text-lg"
+                />
                 <EditorTabs
                   content={formData.content}
                   onChange={updateContent}
@@ -512,7 +519,6 @@ function NewEntryPageComponent() {
               selectedMood={formData.mood}
               onMoodChange={updateMood}
             />
-            <ImageUploader onImageSelect={updateImage} />
             <WritingTipsCard />
             <MarkdownGuideCard />
           </div>
