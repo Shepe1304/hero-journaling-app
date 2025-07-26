@@ -88,7 +88,7 @@ const validateForm = (formData: LoginFormData): string | null => {
 
   if (!email.trim()) return ERROR_MESSAGES.requiredField;
   if (!validateEmail(email)) return ERROR_MESSAGES.invalidEmail;
-  if (!password) return ERROR_MESSAGES.requiredField;
+  if (!password.trim()) return ERROR_MESSAGES.requiredField;
 
   return null;
 };
@@ -203,19 +203,17 @@ const AuthButton: React.FC<AuthButtonProps> = ({
 
   const combinedClasses = `${baseClasses} ${variantClasses[variant]} ${className}`;
 
-  if (variant === "outline") {
-    return (
-      <Button
-        type={type}
-        onClick={onClick}
-        variant="outline"
-        className={combinedClasses}
-        disabled={isLoading || disabled}
-      >
-        {children}
-      </Button>
-    );
-  }
+  return (
+    <Button
+      type={type}
+      onClick={onClick}
+      variant={variant === "outline" ? "outline" : "default"}
+      className={combinedClasses}
+      disabled={isLoading || disabled}
+    >
+      {children}
+    </Button>
+  );
 
   return (
     <Button
@@ -283,7 +281,8 @@ const AuthFooter: React.FC<AuthFooterProps> = ({
 // ================================
 // CUSTOM HOOKS
 // ================================
-const useLoginForm = (redirectTo?: string
+const useLoginForm = (
+  redirectTo?: string
   // , onSuccess?: () => void
 ) => {
   const [formData, setFormData] = useState<LoginFormData>({
@@ -382,7 +381,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     updateField,
     handleLogin,
     handleGoogleAuth,
-  } = useLoginForm(redirectTo
+  } = useLoginForm(
+    redirectTo
     // , onSuccess
   );
 
