@@ -48,12 +48,6 @@ interface EntryFormData {
   image?: File | null;
 }
 
-interface NewEntryPageProps {
-  onSave?: (data: EntryFormData) => Promise<void>;
-  onGenerateChapter?: (content: string) => Promise<void>;
-  className?: string;
-}
-
 interface MarkdownToolbarProps {
   onInsertMarkdown: (before: string, after?: string) => void;
 }
@@ -317,7 +311,6 @@ interface EditorTabsProps {
   onChange: (value: string) => void;
   showPreview: boolean;
   onTogglePreview: (showPreview: boolean) => void;
-  // onInsertMarkdown: (before: string, after?: string) => void;
 }
 
 const EditorTabs: React.FC<EditorTabsProps> = ({
@@ -325,7 +318,6 @@ const EditorTabs: React.FC<EditorTabsProps> = ({
   onChange,
   showPreview,
   onTogglePreview,
-  // onInsertMarkdown,
 }) => (
   <Tabs
     value={showPreview ? "preview" : "write"}
@@ -550,11 +542,7 @@ const useEntryForm = () => {
 // ================================
 // MAIN COMPONENT
 // ================================
-export default function NewEntryPage({
-  onSave,
-  onGenerateChapter,
-  className = "",
-}: NewEntryPageProps) {
+function NewEntryPageComponent() {
   const {
     formData,
     isGenerating,
@@ -572,12 +560,8 @@ export default function NewEntryPage({
   };
 
   const handleSave = async () => {
-    if (onSave) {
-      await onSave(formData);
-    } else {
-      // Default behavior - show alert
-      alert("Entry saved as draft!");
-    }
+    // TODO: Integrate with your backend/database
+    alert("Entry saved as draft!");
   };
 
   const handleGenerateChapter = async () => {
@@ -589,15 +573,11 @@ export default function NewEntryPage({
     setIsGenerating(true);
 
     try {
-      if (onGenerateChapter) {
-        await onGenerateChapter(formData.content);
-      } else {
-        // Default behavior - simulate AI processing
-        setTimeout(() => {
-          setIsGenerating(false);
-          navigateTo(NAVIGATION_PATHS.generateChapter);
-        }, 2000);
-      }
+      // TODO: Integrate with your AI service
+      setTimeout(() => {
+        setIsGenerating(false);
+        navigateTo(NAVIGATION_PATHS.generateChapter);
+      }, 2000);
     } catch (error) {
       console.error("Error generating chapter:", error);
       setIsGenerating(false);
@@ -608,7 +588,7 @@ export default function NewEntryPage({
   const characterCount = getCharacterCount(formData.content);
 
   return (
-    <div className={`min-h-screen parchment-bg ${className}`}>
+    <div className="min-h-screen parchment-bg">
       <PageHeader
         onBack={handleBack}
         onSave={handleSave}
@@ -636,7 +616,6 @@ export default function NewEntryPage({
                   onChange={updateContent}
                   showPreview={showPreview}
                   onTogglePreview={setShowPreview}
-                  // onInsertMarkdown={insertMarkdown}
                 />
                 <EditorStats characterCount={characterCount} />
               </CardContent>
@@ -658,3 +637,6 @@ export default function NewEntryPage({
     </div>
   );
 }
+
+// Export as default for Next.js page
+export default NewEntryPageComponent;
