@@ -317,7 +317,7 @@ interface EditorTabsProps {
   onChange: (value: string) => void;
   showPreview: boolean;
   onTogglePreview: (showPreview: boolean) => void;
-  onInsertMarkdown: (before: string, after?: string) => void;
+  // onInsertMarkdown: (before: string, after?: string) => void;
 }
 
 const EditorTabs: React.FC<EditorTabsProps> = ({
@@ -325,7 +325,7 @@ const EditorTabs: React.FC<EditorTabsProps> = ({
   onChange,
   showPreview,
   onTogglePreview,
-  onInsertMarkdown,
+  // onInsertMarkdown,
 }) => (
   <Tabs
     value={showPreview ? "preview" : "write"}
@@ -636,7 +636,7 @@ export default function NewEntryPage({
                   onChange={updateContent}
                   showPreview={showPreview}
                   onTogglePreview={setShowPreview}
-                  onInsertMarkdown={insertMarkdown}
+                  // onInsertMarkdown={insertMarkdown}
                 />
                 <EditorStats characterCount={characterCount} />
               </CardContent>
