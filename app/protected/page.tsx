@@ -12,8 +12,6 @@ export default async function ProtectedPage() {
     redirect("/auth/login");
   }
 
-  const { data: instruments } = await supabase.from("instruments").select();
-
   return (
     <div className="flex-1 w-full flex flex-col gap-12">
       <div className="w-full">
