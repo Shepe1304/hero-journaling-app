@@ -2,7 +2,7 @@ import { createClient } from "@/app/utils/supabase/server";
 
 export default async function Instruments() {
   const supabase = await createClient();
-  const { data: instruments, error } = await supabase
+  const { data: instruments } = await supabase
     .from("instruments")
     .select();
 
