@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-export async function GET(
-  req: Request,
-  { params }: { params: Record<string, string> }
-) {
-  const { id } = params;
+export async function GET(req: Request, context: { params: { id: string } }) {
+  const { id } = context.params;
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("journal_entries")
@@ -18,11 +15,8 @@ export async function GET(
   return NextResponse.json(data);
 }
 
-export async function PUT(
-  req: Request,
-  { params }: { params: Record<string, string> }
-) {
-  const { id } = params;
+export async function PUT(req: Request, context: { params: { id: string } }) {
+  const { id } = context.params;
   const supabase = await createClient();
   const { content, mood, title, is_draft } = await req.json();
 
@@ -46,9 +40,9 @@ export async function PUT(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: Record<string, string> }
+  context: { params: { id: string } }
 ) {
-  const { id } = params;
+  const { id } = context.params;
   const supabase = await createClient();
 
   const { error } = await supabase
