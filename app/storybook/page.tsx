@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import Image from "next/image";
+// import Image from "next/image";
 import {
   Select,
   SelectContent,
@@ -201,13 +201,13 @@ export default function StorybookPage() {
             >
               <CardHeader className="p-0">
                 <div className="relative">
-                  <Image
+                  {/* <Image
                     src={chapter.coverArt || "/placeholder.svg"}
                     alt={chapter.title ?? "Chapter cover"}
                     width={500}
                     height={192}
                     className="w-full h-48 object-cover rounded-t-lg"
-                  />
+                  /> */}
 
                   <div className="absolute top-2 right-2">
                     <Button
