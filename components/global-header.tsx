@@ -75,7 +75,6 @@ export default function GlobalHeader() {
   const navigationItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
     { href: "/storybook", label: "Storybook", icon: BookOpen },
-    { href: "/entry/new", label: "New Entry", icon: Plus },
   ];
 
   const isActive = (href: string) => {
