@@ -130,6 +130,39 @@ export default function EntryPage({
     }
   };
 
+  const handleGenerateChapter = async () => {
+    if (hasChapter) {
+      try {
+        const { data: chapter, error } = await supabase
+          .from("journal_chapters")
+          .select("id")
+          .eq("entry_id", id) // id is the journal entry ID
+          .maybeSingle();
+
+        if (error) {
+          console.error("Error fetching chapter:", error);
+          return;
+        }
+
+        if (chapter) {
+          // Redirect if chapter exists
+          window.location.href = `/chapter/${chapter.id}`;
+          return; // Stop here
+        }
+      } catch (err) {
+        console.error("Error checking chapter:", err);
+      }
+    }
+
+    // If no chapter exists, go to onboarding
+    try {
+      window.location.href = `/chapter/generate/onboarding?entryId=${id}`;
+    } catch (err) {
+      console.error("Error generating chapter:", err);
+      alert("Something went wrong while generating your chapter.");
+    }
+  };
+
   const insertMarkdown = (before: string, after = "") => {
     const textarea = document.getElementById(
       "entry-textarea"
@@ -448,6 +481,12 @@ export default function EntryPage({
               <CardContent className="space-y-2">
                 {!showPreview && (
                   <>
+                    <Button
+                      className="w-full bg-amber-600 hover:bg-amber-700 text-white font-crimson"
+                      onClick={handleGenerateChapter}
+                    >
+                      {hasChapter ? "View Chapter" : "Generate Chapter"}
+                    </Button>
                     <Button
                       variant="outline"
                       className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 font-crimson bg-transparent"
