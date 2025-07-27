@@ -62,8 +62,11 @@ export default function NarrationPlayer({
   const [backgroundMusic, setBackgroundMusic] = useState(true);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [usingSystemTTS, setUsingSystemTTS] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchElevenLabsAudio = async (
     text: string,
@@ -122,9 +125,37 @@ export default function NarrationPlayer({
     setUsingSystemTTS(true);
   };
 
+  // Update progress bar in real-time
+  useEffect(() => {
+    if (isPlaying && !usingSystemTTS && audioRef.current) {
+      intervalRef.current = setInterval(() => {
+        if (audioRef.current) {
+          setCurrentTime(audioRef.current.currentTime);
+          setDuration(audioRef.current.duration || 0);
+        }
+      }, 100); // Update every 100ms for smooth progress
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [isPlaying, usingSystemTTS]);
+
   useEffect(() => {
     if (!isVisible) {
       // Clean up when player is hidden
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
       if (usingSystemTTS) {
         speechSynthesis.cancel();
       } else if (audioRef.current) {
@@ -152,6 +183,10 @@ export default function NarrationPlayer({
 
     return () => {
       // Clean up on unmount
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
       if (usingSystemTTS) {
         speechSynthesis.cancel();
       } else if (audioRef.current) {
@@ -223,6 +258,10 @@ export default function NarrationPlayer({
               variant="ghost"
               size="sm"
               onClick={() => {
+                if (intervalRef.current) {
+                  clearInterval(intervalRef.current);
+                  intervalRef.current = null;
+                }
                 if (usingSystemTTS) {
                   speechSynthesis.cancel();
                 } else if (audioRef.current) {
@@ -248,22 +287,28 @@ export default function NarrationPlayer({
                     onPlay={() => setIsPlaying(true)}
                     onPause={() => setIsPlaying(false)}
                     onEnded={() => setIsPlaying(false)}
+                    onLoadedMetadata={() => {
+                      if (audioRef.current) {
+                        setDuration(audioRef.current.duration);
+                      }
+                    }}
                   />
                 )}
                 <Slider
-                  value={[audioRef.current?.currentTime || 0]}
-                  max={audioRef.current?.duration || 1}
+                  value={[currentTime]}
+                  max={duration || 1}
                   step={1}
                   onValueChange={(value) => {
                     if (audioRef.current) {
                       audioRef.current.currentTime = value[0];
+                      setCurrentTime(value[0]);
                     }
                   }}
                   className="w-full"
                 />
                 <div className="flex justify-between text-xs text-amber-600 mt-1">
-                  <span>{formatTime(audioRef.current?.currentTime || 0)}</span>
-                  <span>{formatTime(audioRef.current?.duration || 0)}</span>
+                  <span>{formatTime(currentTime)}</span>
+                  <span>{formatTime(duration)}</span>
                 </div>
               </div>
 
