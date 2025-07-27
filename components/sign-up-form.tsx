@@ -268,7 +268,7 @@ const useSignUpForm = (redirectTo?: string) => {
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}${
+          emailRedirectTo: `${"/"}${
             redirectTo || FORM_CONFIG.emailRedirectPath
           }`,
           data: {
@@ -295,9 +295,7 @@ const useSignUpForm = (redirectTo?: string) => {
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${"/"}${
-            redirectTo || FORM_CONFIG.emailRedirectPath
-          }`,
+          redirectTo: `/${redirectTo || FORM_CONFIG.emailRedirectPath}`,
         },
       });
 

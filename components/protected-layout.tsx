@@ -25,7 +25,7 @@ export default function ProtectedLayout({
       setIsAuthenticated(!!session);
       setIsLoading(false);
       if (!session && !isPublicRoute) {
-        router.replace("/");
+        router.replace("/auth/login");
       }
     };
     checkAuth();
@@ -35,7 +35,7 @@ export default function ProtectedLayout({
     } = createClient().auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
       if (!session && !isPublicRoute) {
-        router.replace("/");
+        router.replace("/auth/login");
       }
     });
 
