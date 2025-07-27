@@ -147,14 +147,13 @@ export default function EntryPage({
         if (chapter) {
           // Redirect if chapter exists
           window.location.href = `/chapter/${chapter.id}`;
-          return; // Stop here
+          return;
         }
       } catch (err) {
         console.error("Error checking chapter:", err);
       }
     }
 
-    // If no chapter exists, go to onboarding
     try {
       window.location.href = `/chapter/generate/onboarding?entryId=${id}`;
     } catch (err) {
