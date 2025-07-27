@@ -87,7 +87,7 @@ export default function EntryPage({
     };
 
     fetchEntry();
-  }, [id]);
+  }, [id, supabase]);
 
   const handleDelete = async () => {
     if (

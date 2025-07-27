@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
@@ -22,21 +22,25 @@ import {
 
 interface NarrationPlayerProps {
   chapterTitle: string;
+  text: string;
   isVisible: boolean;
   onClose: () => void;
 }
 
 export default function NarrationPlayer({
   chapterTitle,
+  text,
   isVisible,
   onClose,
 }: NarrationPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration] = useState(300); // 5 minutes in seconds
+  const [duration] = useState(300); // estimated 5 minutes
   const [volume, setVolume] = useState([75]);
   const [selectedVoice, setSelectedVoice] = useState("wise-sage");
   const [backgroundMusic, setBackgroundMusic] = useState(true);
+
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -54,18 +58,58 @@ export default function NarrationPlayer({
     return () => clearInterval(interval);
   }, [isPlaying, duration]);
 
+  useEffect(() => {
+    // Cancel narration if component is closed
+    if (!isVisible) {
+      speechSynthesis.cancel();
+      setIsPlaying(false);
+    }
+  }, [isVisible]);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  const getMappedVoice = (): SpeechSynthesisVoice | null => {
+    const voices = speechSynthesis.getVoices();
+    switch (selectedVoice) {
+      case "wise-sage":
+        return voices.find((v) => v.name.includes("Google") || v.lang === "en-US") ?? null;
+      case "cheeky-bard":
+        return voices.find((v) => v.lang === "en-GB") ?? null;
+      case "stoic-chronicler":
+        return voices.find((v) => v.lang === "en-AU") ?? null;
+      default:
+        return null;
+    }
+  };
+
   const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
+    if (speechSynthesis.speaking) {
+      speechSynthesis.cancel();
+      setIsPlaying(false);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.voice = getMappedVoice();
+    utterance.volume = volume[0] / 100;
+    utterance.rate = 1;
+    utterance.pitch = 1;
+
+    utterance.onend = () => setIsPlaying(false);
+    utterance.onerror = () => setIsPlaying(false);
+
+    utteranceRef.current = utterance;
+    speechSynthesis.speak(utterance);
+    setIsPlaying(true);
   };
 
   const handleSeek = (value: number[]) => {
     setCurrentTime(value[0]);
+    // Can't actually seek in speechSynthesis API
   };
 
   const handleSkipBack = () => {
@@ -74,6 +118,13 @@ export default function NarrationPlayer({
 
   const handleSkipForward = () => {
     setCurrentTime(Math.min(duration, currentTime + 15));
+  };
+
+  const handleVolumeChange = (val: number[]) => {
+    setVolume(val);
+    if (utteranceRef.current) {
+      utteranceRef.current.volume = val[0] / 100;
+    }
   };
 
   if (!isVisible) return null;
@@ -94,7 +145,10 @@ export default function NarrationPlayer({
             <Button
               variant="ghost"
               size="sm"
-              onClick={onClose}
+              onClick={() => {
+                speechSynthesis.cancel();
+                onClose();
+              }}
               className="text-amber-700 hover:text-amber-900"
             >
               ×
@@ -154,12 +208,12 @@ export default function NarrationPlayer({
                 value={volume}
                 max={100}
                 step={1}
-                onValueChange={setVolume}
+                onValueChange={handleVolumeChange}
                 className="w-20"
               />
             </div>
 
-            {/* Settings */}
+            {/* Voice & Music Toggle */}
             <div className="flex items-center space-x-2">
               <Select value={selectedVoice} onValueChange={setSelectedVoice}>
                 <SelectTrigger className="w-32 border-amber-200">
@@ -168,9 +222,7 @@ export default function NarrationPlayer({
                 <SelectContent>
                   <SelectItem value="wise-sage">Wise Sage</SelectItem>
                   <SelectItem value="cheeky-bard">Cheeky Bard</SelectItem>
-                  <SelectItem value="stoic-chronicler">
-                    Stoic Chronicler
-                  </SelectItem>
+                  <SelectItem value="stoic-chronicler">Stoic Chronicler</SelectItem>
                 </SelectContent>
               </Select>
               <Button

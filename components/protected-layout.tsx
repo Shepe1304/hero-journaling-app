@@ -40,7 +40,7 @@ export default function ProtectedLayout({
     });
 
     return () => subscription.unsubscribe();
-  }, [pathname]);
+  }, [pathname, router, isPublicRoute]);
 
   if (isLoading && !isPublicRoute) {
     return (

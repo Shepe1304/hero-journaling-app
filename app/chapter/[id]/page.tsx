@@ -110,6 +110,17 @@ export default function ChapterPage({ params }: { params: Promise<{ id: string }
 
   const handlePlayNarration = () => {
     setShowNarrationPlayer(true);
+    const utterance = new SpeechSynthesisUtterance(chapter.narrative);
+
+    const voices = speechSynthesis.getVoices();
+    const selectedVoice =
+      voices.find((voice) => voice.lang === "en-US" || voice.name.includes("Google")) ?? null;
+
+    utterance.voice = selectedVoice;
+    utterance.rate = 1;
+    utterance.pitch = 1;
+
+    speechSynthesis.speak(utterance);
   };
 
   const handleEditOriginal = () => {
@@ -293,11 +304,10 @@ export default function ChapterPage({ params }: { params: Promise<{ id: string }
 
       {/* Narration Player */}
       <NarrationPlayer
-        chapterTitle={chapter.title}
+        chapterTitle={chapter.title}  
+        text={chapter.narrative}
         isVisible={showNarrationPlayer}
-        onClose={() => {
-          setShowNarrationPlayer(false);
-        }}
+        onClose={() => setShowNarrationPlayer(false)}
       />
     </div>
   );
