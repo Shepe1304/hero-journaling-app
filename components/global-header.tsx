@@ -107,10 +107,10 @@ export default function GlobalHeader() {
             {/* Logo and Brand */}
             <div className="flex items-center space-x-8">
               <Link
-                href="/dashboard"
+                href="/"
                 className="flex items-center space-x-2"
                 onClick={() => {
-                  window.location.assign("/dashboard");
+                  window.location.assign("/");
                 }}
               >
                 <BookOpen className="w-8 h-8 text-amber-700" />
@@ -224,10 +224,10 @@ export default function GlobalHeader() {
         <div className="px-4 py-4">
           <div className="flex items-center justify-between">
             <Link
-              href="/dashboard"
+              href="/"
               className="flex items-center space-x-2"
               onClick={() => {
-                window.location.assign("/dashboard");
+                window.location.assign("/");
               }}
             >
               <BookOpen className="w-6 h-6 text-amber-700" />

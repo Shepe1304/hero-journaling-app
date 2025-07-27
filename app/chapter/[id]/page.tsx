@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ArrowLeft,
   Play,
@@ -18,6 +18,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { useParams } from "next/navigation";
 import NarrationPlayer from "@/components/narration-player";
+import { MusicConsentPopup } from "@/components/music-consent-popup";
 
 interface Chapter {
   title: string;
@@ -29,6 +30,206 @@ interface Chapter {
   originalEntry?: string;
   id: string;
 }
+
+const BackgroundMusicPlayer = () => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [volume, setVolume] = useState(0.7);
+  const [showConsentPopup, setShowConsentPopup] = useState(true);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+
+    if (isPlaying) {
+      audioRef.current.play().catch((error) => {
+        console.error("Audio playback failed:", error);
+        setIsPlaying(false);
+      });
+    } else {
+      audioRef.current.pause();
+    }
+  }, [isPlaying]);
+
+  const handleConsent = (allowed: boolean) => {
+    localStorage.setItem("musicConsent", String(allowed));
+    setShowConsentPopup(false);
+    setIsPlaying(allowed);
+  };
+
+  useEffect(() => {
+    // Initialize audio element
+    audioRef.current = new Audio(
+      "/background-music/enchant-background-music.mp3"
+    );
+    audioRef.current.volume = volume;
+    audioRef.current.loop = true;
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+
+    if (isPlaying) {
+      audioRef.current.play().catch((error) => {
+        console.error("Audio playback failed:", error);
+        setIsPlaying(false);
+      });
+    } else {
+      audioRef.current.pause();
+    }
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
+
+  const togglePlay = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  const handleForward = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = Math.min(
+        audioRef.current.currentTime + 10,
+        audioRef.current.duration
+      );
+    }
+  };
+
+  const handleRewind = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = Math.max(
+        audioRef.current.currentTime - 10,
+        0
+      );
+    }
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+  };
+
+  return (
+    <>
+      {showConsentPopup && <MusicConsentPopup onConsent={handleConsent} />}
+      <div className="fixed bottom-4 right-4 bg-white/90 backdrop-blur-sm border border-amber-200 rounded-lg shadow-lg p-3 flex items-center gap-3 z-50">
+        <button
+          onClick={handleRewind}
+          className="p-2 text-amber-700 hover:bg-amber-100 rounded-full transition-colors"
+          title="Rewind 10 seconds"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polygon points="11 19 2 12 11 5 11 19"></polygon>
+            <polygon points="22 19 13 12 22 5 22 19"></polygon>
+          </svg>
+        </button>
+
+        <button
+          onClick={togglePlay}
+          className="p-2 text-amber-700 hover:bg-amber-100 rounded-full transition-colors"
+          title={isPlaying ? "Pause" : "Play"}
+        >
+          {isPlaying ? (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="6" y="4" width="4" height="16"></rect>
+              <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+          ) : (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          )}
+        </button>
+
+        <button
+          onClick={handleForward}
+          className="p-2 text-amber-700 hover:bg-amber-100 rounded-full transition-colors"
+          title="Forward 10 seconds"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polygon points="13 19 22 12 13 5 13 19"></polygon>
+            <polygon points="2 19 11 12 2 5 2 19"></polygon>
+          </svg>
+        </button>
+
+        <div className="flex items-center gap-2 ml-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-amber-600"
+          >
+            <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+          </svg>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={volume}
+            onChange={handleVolumeChange}
+            className="w-20 accent-amber-600"
+          />
+        </div>
+      </div>
+    </>
+  );
+};
 
 export default function ChapterDisplayPage() {
   const [chapter, setChapter] = useState<Chapter | null>(null);
@@ -595,6 +796,7 @@ export default function ChapterDisplayPage() {
         />
       )}
       {isPlaying && <div style={{ height: "200px" }} />}
+      <BackgroundMusicPlayer />
     </div>
   );
 }
