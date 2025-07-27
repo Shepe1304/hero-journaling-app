@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import OnboardingPage from "@/app/onboarding/page";
 import DashboardPage from "@/app/dashboard/page";
+import LandingPage from "./landing/page";
 
 export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -42,5 +42,5 @@ export default function HomePage() {
     );
   }
 
-  return isAuthenticated ? <DashboardPage /> : <OnboardingPage />;
+  return isAuthenticated ? <DashboardPage /> : <LandingPage />;
 }
