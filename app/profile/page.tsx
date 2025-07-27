@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { User } from "@supabase/supabase-js";
 
 interface JournalEntry {
   id: string;
@@ -23,6 +24,7 @@ interface JournalChapter {
 export default function ProfilePage() {
   const supabase = createClient();
 
+  const [user, setUser] = useState<User | null>(null);
   const [latestEntry, setLatestEntry] = useState<JournalEntry | null>(null);
   const [latestChapter, setLatestChapter] = useState<JournalChapter | null>(
     null
@@ -33,76 +35,96 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
 
-      // 1. Latest entry
-      const { data: entry } = await supabase
-        .from("journal_entries")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      setLatestEntry(entry);
-
-      // 2. Latest chapter
-      const { data: chapter } = await supabase
-        .from("journal_chapters")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      setLatestChapter(chapter);
-
-      // 3. All chapters (for timeline)
-      const { data: allChapters } = await supabase
-        .from("journal_chapters")
-        .select("id, title, created_at, summary")
-        .order("created_at", { ascending: true });
-
-      setChapters(allChapters || []);
-
-      // 4. Get total entries count
-      const { count } = await supabase
-        .from("journal_entries")
-        .select("*", { count: "exact", head: true });
-
-      setTotalEntries(count || 0);
-
-      // 5. Calculate current streak (simplified)
-      const { data: recentEntries } = await supabase
-        .from("journal_entries")
-        .select("created_at")
-        .order("created_at", { ascending: false })
-        .limit(30);
-
-      if (recentEntries && recentEntries.length > 0) {
-        let streak = 1;
-        let checkDate = new Date(recentEntries[0].created_at);
-
-        for (let i = 1; i < recentEntries.length; i++) {
-          const entryDate = new Date(recentEntries[i].created_at);
-          const dayDiff = Math.floor(
-            (checkDate.getTime() - entryDate.getTime()) / (1000 * 3600 * 24)
-          );
-
-          if (dayDiff === 1) {
-            streak++;
-            checkDate = entryDate;
-          } else {
-            break;
-          }
-        }
-        setCurrentStreak(streak);
+      if (!user) {
+        // Redirect to login if no user
+        window.location.href = "/login";
+        return;
       }
 
-      setLoading(false);
+      await fetchData(user.id);
     };
 
-    fetchData();
+    getUser();
   }, []);
+
+  const fetchData = async (userId: string) => {
+    setLoading(true);
+
+    // 1. Latest entry for the user
+    const { data: entry } = await supabase
+      .from("journal_entries")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    setLatestEntry(entry);
+
+    // 2. Latest chapter for the user
+    const { data: chapter } = await supabase
+      .from("journal_chapters")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    setLatestChapter(chapter);
+
+    // 3. All chapters for the user (for timeline)
+    const { data: allChapters } = await supabase
+      .from("journal_chapters")
+      .select("id, title, created_at, summary")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true });
+
+    setChapters(allChapters || []);
+
+    // 4. Get total entries count for the user
+    const { count } = await supabase
+      .from("journal_entries")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId);
+
+    setTotalEntries(count || 0);
+
+    // 5. Calculate current streak for the user (simplified)
+    const { data: recentEntries } = await supabase
+      .from("journal_entries")
+      .select("created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(30);
+
+    if (recentEntries && recentEntries.length > 0) {
+      let streak = 1;
+      let checkDate = new Date(recentEntries[0].created_at);
+
+      for (let i = 1; i < recentEntries.length; i++) {
+        const entryDate = new Date(recentEntries[i].created_at);
+        const dayDiff = Math.floor(
+          (checkDate.getTime() - entryDate.getTime()) / (1000 * 3600 * 24)
+        );
+
+        if (dayDiff === 1) {
+          streak++;
+          checkDate = entryDate;
+        } else {
+          break;
+        }
+      }
+      setCurrentStreak(streak);
+    }
+
+    setLoading(false);
+  };
 
   if (loading) {
     return (
@@ -111,6 +133,18 @@ export default function ProfilePage() {
           <div className="w-16 h-16 border-4 border-amber-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-amber-800 font-crimson text-lg">
             Loading your journey...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50">
+        <div className="text-center">
+          <p className="text-amber-800 font-crimson text-lg">
+            Please log in to view your profile
           </p>
         </div>
       </div>
@@ -249,7 +283,6 @@ export default function ProfilePage() {
           </Card>
         )}
 
-        {/* Enhanced Timeline */}
         {/* Enhanced Timeline */}
         {chapters.length > 0 && (
           <Card className="bg-white/90 backdrop-blur-sm shadow-xl border-2 border-amber-200 overflow-hidden">
