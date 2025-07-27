@@ -334,7 +334,7 @@ const useLoginForm = (redirectTo?: string) => {
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `/${redirectTo || FORM_CONFIG.defaultRedirectPath}`,
+          redirectTo: `${window.location.origin}/dashboard`,
         },
       });
 
