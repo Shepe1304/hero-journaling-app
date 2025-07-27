@@ -3,6 +3,7 @@ import { Geist, Inter, Cinzel, Crimson_Text } from "next/font/google";
 // import { ThemeProvider } from "next-themes";
 import GlobalHeader from "@/components/global-header";
 import ProtectedLayout from "@/components/protected-layout";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -42,6 +43,20 @@ export default function RootLayout({
         > */}
         <GlobalHeader />
         <ProtectedLayout>{children}</ProtectedLayout>
+        <Toaster
+          position="top-center"
+          richColors
+          closeButton
+          theme="light" // or "dark" | "system"
+          duration={3000} // <-- default timeout (3s)
+          toastOptions={{
+            style: {
+              fontSize: "1rem", // make text larger
+              padding: "1rem 1.25rem", // bigger padding
+              borderRadius: "0.75rem", // softer corners
+            },
+          }}
+        />
         {/* </ThemeProvider> */}
       </body>
     </html>

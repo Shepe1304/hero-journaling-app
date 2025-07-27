@@ -27,6 +27,7 @@ import {
   Link,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 // ================================
 // TYPES & INTERFACES
@@ -438,7 +439,7 @@ function NewEntryPageComponent() {
 
   const handleSave = async () => {
     if (!formData.content || !formData.mood) {
-      alert("Please fill in the content and select a mood.");
+      toast.error("Content and mood are required.");
       return;
     }
 
@@ -462,11 +463,13 @@ function NewEntryPageComponent() {
       if (error) throw new Error(error.message);
 
       console.log("Entry saved:", data);
-      alert("Entry saved successfully!");
+      toast.success("Entry saved successfully!");
       window.location.href = `/entry/${data.id}`;
     } catch (err) {
       console.error(err);
-      alert(err instanceof Error ? err.message : "An error occurred");
+      toast.error("Failed to save entry.", {
+        description: "Please try again later.",
+      });
     } finally {
       setIsSaving(false);
     }

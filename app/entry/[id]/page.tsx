@@ -31,6 +31,7 @@ import {
   X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 const moods = [
   { value: "happy", label: "Happy", icon: Smile, color: "text-yellow-500" },
@@ -76,7 +77,9 @@ export default function EntryPage({
 
       if (error) {
         console.error("Error fetching entry:", error);
-        alert("Failed to load entry.");
+        toast.error("Failed to load entry.", {
+          description: "Please try again later.",
+        });
       } else if (data) {
         setEntry(data.content || "");
         setTitle(data.title || "");
@@ -102,9 +105,11 @@ export default function EntryPage({
 
       if (error) {
         console.error(error);
-        alert("Failed to delete entry.");
+        toast.error("Failed to delete entry.", {
+          description: "Please try again later.",
+        });
       } else {
-        alert("Entry deleted!");
+        toast.success("Entry deleted successfully!");
         window.location.href = "/dashboard";
       }
     }
@@ -123,9 +128,11 @@ export default function EntryPage({
 
     if (error) {
       console.error(error);
-      alert("Failed to save changes.");
+      toast.error("Failed to save changes.", {
+        description: "Please try again later.",
+      });
     } else {
-      alert("Changes saved!");
+      toast.success("Entry updated successfully!");
       setShowPreview(false);
     }
   };
@@ -158,7 +165,9 @@ export default function EntryPage({
       window.location.href = `/chapter/generate/onboarding?entryId=${id}`;
     } catch (err) {
       console.error("Error generating chapter:", err);
-      alert("Something went wrong while generating your chapter.");
+      toast.error("Something went wrong while generating your chapter.", {
+        description: "Please try again later.",
+      });
     }
   };
 

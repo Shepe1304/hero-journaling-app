@@ -130,7 +130,21 @@ The app uses two main tables in Supabase:
 
 ### journal_entries
 
-- Basic journal entry information with mood tracking and markdown content
+```sql
+create table public.journal_entries (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid null,
+  title text null,
+  content text not null,
+  mood text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  has_chapter boolean null,
+  cover_art text null,
+  constraint journal_entries_pkey primary key (id),
+  constraint journal_entries_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
+```
 
 ### journal_chapters
 
@@ -190,7 +204,6 @@ The app uses a modern component architecture with:
 
 - **Radix UI Primitives:** Accessible, unstyled components
 - **Tailwind CSS:** Utility-first styling with custom animations
-- **Dark/Light Mode:** Automatic theme switching with next-themes
 - **Responsive Design:** Mobile-first approach with Tailwind breakpoints
 
 ---

@@ -28,6 +28,7 @@ import {
   Edit,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 // Types
 interface Chapter {
@@ -310,7 +311,8 @@ export default function StorybookPage() {
   const handlePlayNarration = (chapterId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     // Implement narration playback
-    alert(`Playing narration for chapter ${chapterId}`);
+    // alert(`Playing narration for chapter ${chapterId}`);
+    toast.success(`Playing narration for chapter ${chapterId}`);
   };
 
   const filteredChapters = chapters

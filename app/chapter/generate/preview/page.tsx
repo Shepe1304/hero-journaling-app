@@ -23,6 +23,7 @@ import {
   X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 interface Chapter {
   id: string;
@@ -132,7 +133,15 @@ export default function ChapterGeneratePage() {
         setEditSummary(generated.summary);
       } catch (err) {
         console.error(err);
-        alert("Something went wrong while generating the chapter: ");
+        toast.error("Something went wrong while generating the chapter.", {
+          description: "Please try again by reloading the page.",
+          action: {
+            label: "Reload",
+            onClick: () => {
+              window.location.reload();
+            },
+          },
+        });
       } finally {
         setLoading(false);
       }
@@ -151,10 +160,12 @@ export default function ChapterGeneratePage() {
 
   const handleSaveChapter = () => {
     setIsSaved(true);
-    setTimeout(() => (window.location.href = "/storybook"), 1000);
+    setTimeout(() => (window.location.href = `/chapter/${chapter?.id}`), 1000);
   };
 
-  const handleShare = () => alert("Sharing functionality coming soon!");
+  const handleShare = () => {
+    toast.success("Sharing functionality coming soon!");
+  };
 
   const handleSaveEdits = async () => {
     try {
@@ -183,10 +194,14 @@ export default function ChapterGeneratePage() {
       );
 
       setShowEdit(false);
-      alert("Chapter updated successfully!");
+      toast.success("Chapter updated successfully!", {
+        description: "Your chapter has been added to your storybook.",
+      });
     } catch (error) {
       console.error("Error saving edits:", error);
-      alert("Failed to save changes.");
+      toast.error("Failed to save changes.", {
+        description: "Please try again later.",
+      });
     }
   };
 
