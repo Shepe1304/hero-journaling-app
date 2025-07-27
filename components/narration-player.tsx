@@ -187,7 +187,9 @@ export default function NarrationPlayer({
                 ref={audioRef}
                 src={audioUrl}
                 preload="auto"
-                onTimeUpdate={() => setIsPlaying(audioRef.current?.paused === false)}
+                // onTimeUpdate={() => setIsPlaying(audioRef.current?.paused === false)}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
                 onEnded={() => setIsPlaying(false)}
               />
             )}
