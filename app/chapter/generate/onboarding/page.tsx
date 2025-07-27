@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Scroll, Sparkles, BookOpen, Users } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 const storyTones = [
   {
@@ -57,10 +59,44 @@ const narratorPersonas = [
 export default function OnboardingPage() {
   const [selectedTone, setSelectedTone] = useState<string>("");
   const [selectedNarrator, setSelectedNarrator] = useState<string>("");
+  const searchParams = useSearchParams();
+  const entryId = searchParams.get("entryId");
+  const supabase = createClient();
 
-  const handleGetStarted = () => {
-    // Navigate to authentication
-    window.location.href = "/auth/sign-up";
+  const handleGetStarted = async () => {
+    try {
+      const userRes = await supabase.auth.getUser();
+      const user = userRes.data.user;
+      if (!user) {
+        alert("You must be logged in.");
+        return;
+      }
+
+      // Insert a new chapter
+      const { error } = await supabase
+        .from("journal_chapters")
+        .insert({
+          entry_id: entryId,
+          user_id: user.id,
+          story_tone: selectedTone,
+          narrator: selectedNarrator,
+          status: "draft",
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error(error);
+        alert("Failed to create chapter.");
+        return;
+      }
+
+      // Redirect to the next step
+      window.location.href = `/chapter/generate/preview?entryId=${entryId}`;
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong.");
+    }
   };
 
   return (

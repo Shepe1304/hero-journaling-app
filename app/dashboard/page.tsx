@@ -1,15 +1,13 @@
 "use client";
 
-import type React from "react";
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Calendar,
-  List,
-  BookOpen,
   Smile,
   Meh,
   Frown,
@@ -20,10 +18,10 @@ import {
 } from "lucide-react";
 
 // ================================
-// TYPES & INTERFACES
+// TYPES
 // ================================
 interface JournalEntry {
-  id: number;
+  id: string;
   date: string;
   mood: MoodType;
   preview: string;
@@ -40,22 +38,22 @@ type MoodType =
   | "peaceful"
   | "thoughtful";
 
-interface MoodConfig {
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-  bg: string;
-}
-
 interface DashboardStats {
   chaptersWritten: number;
   totalEntries: number;
-  currentTone: string;
 }
 
 // ================================
-// CONSTANTS & CONFIGURATION
+// CONFIG
 // ================================
-const MOOD_ICONS: Record<MoodType, MoodConfig> = {
+const MOOD_ICONS: Record<
+  MoodType,
+  {
+    icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+    color: string;
+    bg: string;
+  }
+> = {
   happy: { icon: Smile, color: "text-yellow-500", bg: "bg-yellow-100" },
   sad: { icon: Frown, color: "text-blue-500", bg: "bg-blue-100" },
   neutral: { icon: Meh, color: "text-gray-500", bg: "bg-gray-100" },
@@ -64,90 +62,38 @@ const MOOD_ICONS: Record<MoodType, MoodConfig> = {
   thoughtful: { icon: Moon, color: "text-purple-500", bg: "bg-purple-100" },
 };
 
-// Mock data - In real app, this would come from Supabase
-const MOCK_ENTRIES: JournalEntry[] = [
-  {
-    id: 1,
-    date: "2024-01-15",
-    mood: "happy",
-    preview:
-      "Today I finally completed my **first marathon**! The feeling of crossing the finish line was *incredible*...",
-    title: "The Marathon Victory",
-    hasChapter: true,
-    wordCount: 245,
-  },
-  {
-    id: 2,
-    date: "2024-01-14",
-    mood: "thoughtful",
-    preview:
-      "Spent the evening reading by the fireplace. There's something magical about...",
-    title: "Evening Reflections",
-    hasChapter: true,
-    wordCount: 189,
-  },
-  {
-    id: 3,
-    date: "2024-01-13",
-    mood: "excited",
-    preview:
-      "Got the promotion I've been working towards for months. All those late nights...",
-    title: "Career Milestone",
-    hasChapter: false,
-    wordCount: 156,
-  },
-  {
-    id: 4,
-    date: "2024-01-12",
-    mood: "peaceful",
-    preview:
-      "Morning walk in the forest. The mist was rising from the ground and birds...",
-    title: "Forest Meditation",
-    hasChapter: true,
-    wordCount: 203,
-  },
-];
-
 // ================================
-// UTILITY FUNCTIONS
+// UTILITIES
 // ================================
-const formatDate = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString("en-US", {
+const formatDate = (dateString: string): string =>
+  new Date(dateString).toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
   });
-};
 
-const renderMarkdownPreview = (text: string): string => {
-  return text
+const renderMarkdownPreview = (text: string): string =>
+  text
     .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.*?)\*/g, "<em>$1</em>");
-};
 
 const calculateStats = (entries: JournalEntry[]): DashboardStats => ({
-  chaptersWritten: entries.filter((entry) => entry.hasChapter).length,
+  chaptersWritten: entries.filter((e) => e.hasChapter).length,
   totalEntries: entries.length,
-  currentTone: "Epic", // This could be calculated based on recent moods
 });
 
-const navigateToEntry = (entryId: number, edit = false): void => {
+const navigateToEntry = (entryId: string, edit = false) => {
   const editParam = edit ? "?edit=true" : "";
   window.location.href = `/entry/${entryId}${editParam}`;
 };
 
 // ================================
-// SUB-COMPONENTS
+// COMPONENTS
 // ================================
-interface MoodIconProps {
-  mood: MoodType;
-}
-
-const MoodIcon: React.FC<MoodIconProps> = ({ mood }) => {
+const MoodIcon = ({ mood }: { mood: MoodType }) => {
   const moodData = MOOD_ICONS[mood] || MOOD_ICONS.neutral;
   const IconComponent = moodData.icon;
-
   return (
     <div className={`p-2 rounded-full ${moodData.bg}`}>
       <IconComponent className={`w-4 h-4 ${moodData.color}`} />
@@ -155,33 +101,15 @@ const MoodIcon: React.FC<MoodIconProps> = ({ mood }) => {
   );
 };
 
-interface StatsCardProps {
-  icon: React.ComponentType<{ className?: string }>;
-  value: string | number;
-  label: string;
-}
-
-const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, value, label }) => (
-  <Card className="chapter-card border-amber-200">
-    <CardContent className="p-6">
-      <div className="flex items-center">
-        <Icon className="w-8 h-8 text-amber-600 mr-3" />
-        <div>
-          <p className="text-2xl font-bold text-amber-900">{value}</p>
-          <p className="text-sm text-amber-700 font-crimson">{label}</p>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-);
-
-interface EntryCardProps {
+const EntryCard = ({
+  entry,
+  onView,
+  onEdit,
+}: {
   entry: JournalEntry;
-  onView: (id: number) => void;
-  onEdit: (id: number, e: React.MouseEvent) => void;
-}
-
-const EntryCard: React.FC<EntryCardProps> = ({ entry, onView, onEdit }) => (
+  onView: (id: string) => void;
+  onEdit: (id: string, e: React.MouseEvent) => void;
+}) => (
   <div
     className="p-4 rounded-lg border border-amber-200 hover:border-amber-300 cursor-pointer transition-all duration-200 hover:shadow-md chapter-card group"
     onClick={() => onView(entry.id)}
@@ -218,8 +146,13 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, onView, onEdit }) => (
         />
       </div>
       <div className="ml-4 flex flex-col gap-2">
-        <Badge variant="outline" className="border-amber-300 text-amber-700">
-          Entry {entry.id}
+        <Badge
+          variant="outline"
+          className={`capitalize ${
+            MOOD_ICONS[entry.mood as MoodType]?.bg || "bg-gray-100"
+          } ${MOOD_ICONS[entry.mood as MoodType]?.color || "text-gray-700"}`}
+        >
+          {entry.mood}
         </Badge>
         {entry.hasChapter && (
           <Badge variant="outline" className="border-green-300 text-green-700">
@@ -231,79 +164,96 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, onView, onEdit }) => (
   </div>
 );
 
-interface StatsGridProps {
-  stats: DashboardStats;
-}
-
-const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-    <StatsCard
-      icon={BookOpen}
-      value={stats.chaptersWritten}
-      label="Chapters Written"
-    />
-    <StatsCard icon={Edit} value={stats.totalEntries} label="Total Entries" />
-    <StatsCard icon={Zap} value={stats.currentTone} label="Current Tone" />
-  </div>
-);
-
-interface EntriesListProps {
-  entries: JournalEntry[];
-  onViewEntry: (id: number) => void;
-  onEditEntry: (id: number, e: React.MouseEvent) => void;
-}
-
-const EntriesList: React.FC<EntriesListProps> = ({
-  entries,
-  onViewEntry,
-  onEditEntry,
-}) => (
-  <div className="space-y-4">
-    {entries.map((entry) => (
-      <EntryCard
-        key={entry.id}
-        entry={entry}
-        onView={onViewEntry}
-        onEdit={onEditEntry}
-      />
-    ))}
-  </div>
-);
-
-const CalendarPlaceholder: React.FC = () => (
-  <div className="text-center py-12">
-    <Calendar className="w-16 h-16 text-amber-400 mx-auto mb-4" />
-    <h3 className="font-cinzel text-xl text-amber-900 mb-2">Calendar View</h3>
-    <p className="text-amber-700 font-crimson">
-      Calendar integration coming soon to visualize your journey timeline
-    </p>
-  </div>
-);
-
 // ================================
-// MAIN COMPONENT
+// MAIN DASHBOARD
 // ================================
 export default function DashboardPage() {
+  const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState<"list" | "calendar">("list");
 
-  // TODO: Replace with Supabase hooks/queries later
-  const entries = MOCK_ENTRIES;
+  useEffect(() => {
+    const fetchEntries = async () => {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("journal_entries")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+
+        const transformed = (data || []).map((entry) => ({
+          id: entry.id,
+          date: entry.date || entry.created_at,
+          mood: (entry.mood &&
+          [
+            "happy",
+            "sad",
+            "neutral",
+            "excited",
+            "peaceful",
+            "thoughtful",
+          ].includes(entry.mood)
+            ? entry.mood
+            : "neutral") as MoodType,
+          preview: entry.content?.slice(0, 120) + "...",
+          title:
+            entry.title ||
+            `Entry from ${new Date(entry.created_at).toLocaleDateString()}`,
+          hasChapter: entry.has_chapter || false,
+          wordCount: entry.content?.split(/\s+/).length || 0,
+        }));
+
+        setEntries(transformed);
+      } catch (err) {
+        console.error("Error fetching entries:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEntries();
+  }, []);
+
   const stats = calculateStats(entries);
 
-  const handleViewEntry = (entryId: number) => {
-    navigateToEntry(entryId);
-  };
-
-  const handleEditEntry = (entryId: number, e: React.MouseEvent) => {
+  const handleViewEntry = (entryId: string) => navigateToEntry(entryId);
+  const handleEditEntry = (entryId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     navigateToEntry(entryId, true);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center parchment-bg">
+        <p className="font-crimson text-xl text-amber-700">
+          Loading your story...
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen parchment-bg">
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <StatsGrid stats={stats} />
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-2xl font-bold">{stats.chaptersWritten}</p>
+              <p>Chapters Written</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-2xl font-bold">{stats.totalEntries}</p>
+              <p>Total Entries</p>
+            </CardContent>
+          </Card>
+        </div>
 
+        {/* Entries */}
         <Card className="fantasy-border bg-white/90 backdrop-blur-sm">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -317,30 +267,32 @@ export default function DashboardPage() {
                 }
               >
                 <TabsList>
-                  <TabsTrigger value="list" className="font-crimson">
-                    <List className="w-4 h-4 mr-2" />
-                    List
-                  </TabsTrigger>
-                  <TabsTrigger value="calendar" className="font-crimson">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Calendar
-                  </TabsTrigger>
+                  <TabsTrigger value="list">List</TabsTrigger>
+                  <TabsTrigger value="calendar">Calendar</TabsTrigger>
                 </TabsList>
-
-                <TabsContent value="list" className="mt-6">
-                  <EntriesList
-                    entries={entries}
-                    onViewEntry={handleViewEntry}
-                    onEditEntry={handleEditEntry}
-                  />
-                </TabsContent>
-
-                <TabsContent value="calendar" className="mt-6">
-                  <CalendarPlaceholder />
-                </TabsContent>
               </Tabs>
             </div>
           </CardHeader>
+
+          <CardContent>
+            {currentView === "list" ? (
+              <div className="space-y-4">
+                {entries.map((entry) => (
+                  <EntryCard
+                    key={entry.id}
+                    entry={entry}
+                    onView={handleViewEntry}
+                    onEdit={handleEditEntry}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Calendar className="w-16 h-16 text-amber-400 mx-auto mb-4" />
+                <p className="font-crimson">Calendar view coming soon!</p>
+              </div>
+            )}
+          </CardContent>
         </Card>
       </div>
     </div>

@@ -5,10 +5,6 @@ import GlobalHeader from "@/components/global-header";
 import ProtectedLayout from "@/components/protected-layout";
 import "./globals.css";
 
-// const defaultUrl = process.env.VERCEL_URL
-//   ? `https://${process.env.VERCEL_URL}`
-//   : "http://localhost:3000";
-
 export const metadata: Metadata = {
   title: "Odyscribe - Write Your Life as an Epic Journey",
   description: "Transform your everyday journal entries into chapters of an epic Hero's Journey",

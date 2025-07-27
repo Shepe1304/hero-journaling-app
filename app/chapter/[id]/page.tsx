@@ -1,119 +1,193 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Volume2, Edit, BookOpen } from "lucide-react";
-import NarrationPlayer from "@/components/narration-player";
-import React from "react";
+import React, { useState, useEffect } from "react";
+import {
+  ArrowLeft,
+  Play,
+  Save,
+  Share,
+  VolumeX,
+  Edit,
+  Eye,
+  Bold,
+  Italic,
+  List,
+  Link,
+  X,
+} from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { useParams } from "next/navigation";
 
-// Mock data for individual chapters - in real app this would come from API
-const mockChapters: Record<string, { id: number; title: string; narrative: string; summary: string; mood: string; date: string; readTime: string; originalEntry: string }> = {
-  "1": {
-    id: 1,
-    title: "The Marathon of Triumph",
-    narrative: `The dawn broke with golden promise as our hero stood at the starting line, heart thundering like war drums in their chest. Twenty-six miles stretched ahead—a quest that would test not just the strength of their legs, but the very fiber of their spirit.
+interface Chapter {
+  title: string;
+  content: string;
+  summary: string;
+  narrator: string;
+  storyTone: string;
+  status: string;
+  originalEntry?: string;
+  id: string;
+}
 
-Through the early miles, doubt whispered its poison: "Turn back, this path is too arduous." But our champion pressed forward, each step a declaration of defiance against the voice of surrender. The sun climbed higher, casting long shadows that seemed to reach for their ankles, trying to drag them back to the realm of the ordinary.
+export default function ChapterDisplayPage() {
+  const [chapter, setChapter] = useState<Chapter | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [editSummary, setEditSummary] = useState("");
+  const [activeTab, setActiveTab] = useState<"write" | "preview">("write");
 
-At mile thirteen, the halfway point, a revelation struck like lightning. This was not merely a race against time or distance—this was a battle against every moment of self-doubt, every whispered "you cannot." The crowd's cheers became the songs of ancient bards, celebrating not just a runner, but a warrior on their most sacred journey.
+  const params = useParams();
+  const chapterId = params?.id as string;
+  const supabase = createClient();
 
-The final miles transformed into a gauntlet of fire. Muscles screamed their protests, lungs burned with the effort of drawing breath, yet still our hero persevered. For they had learned the greatest truth of all: that victory is not found in the absence of struggle, but in the choice to continue despite it.
+  // Fetch chapter data on component mount
+  useEffect(() => {
+    const fetchChapterData = async () => {
+      if (!supabase || !chapterId) {
+        setError("Missing Supabase client or entry ID");
+        setLoading(false);
+        return;
+      }
 
-As the finish line appeared like a golden gateway to legend, tears of triumph mixed with sweat of effort. The crossing was not just the end of a race—it was the birth of a new chapter in the epic tale of a soul who dared to dream, dared to try, and dared to triumph.`,
-    summary:
-      "Our hero conquers their first marathon, transforming a physical challenge into a spiritual victory that proves the power of perseverance over doubt.",
-    mood: "triumphant",
-    date: "2024-01-15",
-    readTime: "5 min",
-    originalEntry:
-      "Today I finally completed my **first marathon**! The feeling of crossing the finish line was *incredible*. I trained for months and there were times I wanted to quit, but I pushed through. All the early morning runs, the sore muscles, the doubt - it was all worth it in the end. I feel like I can accomplish anything now.",
-  },
-  "2": {
-    id: 2,
-    title: "The Fireside Revelation",
-    narrative: `In the quiet sanctuary of home, as twilight painted the sky in shades of amber and rose, our hero found themselves drawn to the ancient ritual of fire. The hearth beckoned with promises of warmth and wisdom, its flames dancing like spirits of old, eager to share their secrets.
+      try {
+        setLoading(true);
+        setError("");
 
-The book in their hands was more than mere paper and ink—it was a portal to other worlds, other lives, other truths. As the fire crackled and whispered its ancient songs, our hero felt the boundaries between reality and imagination begin to blur. Each page turned was a step deeper into the labyrinth of knowledge.
+        // Get the chapter record
+        const { data: chapterData, error: chapterError } = await supabase
+          .from("journal_chapters")
+          .select("*")
+          .eq("id", chapterId)
+          .single();
 
-In this sacred space, where time seemed to slow and the outside world faded to a distant memory, profound realizations began to emerge. The flickering light revealed not just the words on the page, but truths hidden within the hero's own soul. This was not merely reading—this was communion with the eternal wisdom that flows through all stories, all lives, all dreams.
+        if (chapterError || !chapterData) {
+          throw new Error("Failed to fetch chapter data.");
+        }
 
-The fire burned lower as the night deepened, but the inner flame of understanding burned ever brighter. In the gentle glow of ember and insight, our hero discovered that the greatest adventures often happen not in distant lands, but in the quiet moments when we dare to truly see ourselves.`,
-    summary:
-      "In the quiet glow of firelight, profound wisdom emerges from simple moments of reflection and the timeless ritual of reading.",
-    mood: "thoughtful",
-    date: "2024-01-14",
-    readTime: "3 min",
-    originalEntry:
-      "Spent the evening reading by the fireplace. There's something magical about the combination of a good book, warm fire, and quiet solitude. Made me think about how much I've grown this year.",
-  },
-  "4": {
-    id: 4,
-    title: "The Forest Sanctuary",
-    narrative: `Before the world awakened, when the veil between dreams and reality was thinnest, our hero ventured into the emerald cathedral of the ancient forest. The morning mist rose like incense from the sacred ground, carrying with it the prayers of countless creatures who called this place home.
+        // Get the original entry if we have entry_id
+        let originalEntry = "";
+        if (chapterData.entry_id) {
+          const { data: entryData } = await supabase
+            .from("journal_entries")
+            .select("content")
+            .eq("id", chapterData.entry_id)
+            .single();
 
-Each footstep on the moss-covered path was a meditation, a gentle communion with the earth that had witnessed countless seasons, countless stories. The trees stood as silent sentinels, their branches reaching skyward in eternal supplication, their roots delving deep into the mysteries of the earth.
+          originalEntry = entryData?.content || "";
+        }
 
-The symphony of the forest began to unfold—the liquid notes of hidden streams, the percussion of woodpeckers against ancient bark, the ethereal chorus of birds greeting the dawn. Our hero felt their own heartbeat synchronize with this primal rhythm, becoming one with the pulse of life itself.
+        const fullChapter = {
+          ...chapterData,
+          originalEntry,
+        };
 
-In this sanctuary of green and gold, where sunbeams filtered through the canopy like divine light through stained glass, our hero found what they had unknowingly been seeking: perfect peace. Here, in the embrace of nature's cathedral, the soul could rest, restore, and remember its connection to all living things.`,
-    summary:
-      "Morning mist and birdsong create a sacred space for inner peace and connection with the eternal rhythms of nature.",
-    mood: "peaceful",
-    date: "2024-01-12",
-    readTime: "3 min",
-    originalEntry:
-      "Morning walk in the forest. The mist was rising from the ground and birds were singing everywhere. Felt so peaceful and connected to nature. These quiet moments are becoming more precious to me.",
-  },
-};
+        setChapter(fullChapter);
+        setEditTitle(chapterData.title || "");
+        setEditContent(chapterData.content || "");
+        setEditSummary(chapterData.summary || "");
+      } catch (err) {
+        console.error("Error fetching chapter", err);
+        // setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-export default function ChapterPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = React.use(params);
-  const [showNarrationPlayer, setShowNarrationPlayer] = useState(false);
+    fetchChapterData();
+  }, [chapterId, supabase]);
 
-  const chapter = mockChapters[id];
-
-  // If chapter doesn't exist, show not found
-  if (!chapter) {
-    return (
-      <div className="min-h-screen parchment-bg flex items-center justify-center">
-        <Card className="fantasy-border bg-white/90 backdrop-blur-sm max-w-md w-full mx-4">
-          <CardContent className="p-8 text-center">
-            <BookOpen className="w-16 h-16 text-amber-400 mx-auto mb-4" />
-            <h2 className="font-cinzel text-2xl text-amber-900 mb-2">
-              Chapter Not Found
-            </h2>
-            <p className="font-crimson text-amber-700 mb-6">
-              This chapter doesn&apos;t exist in your storybook yet.
-            </p>
-            <div className="space-y-2">
-              <Button
-                onClick={() => (window.location.href = "/storybook")}
-                className="w-full bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700 font-crimson"
-              >
-                Browse Storybook
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => (window.location.href = "/dashboard")}
-                className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 font-crimson bg-transparent"
-              >
-                Back to Dashboard
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const handlePlayNarration = () => {
-    setShowNarrationPlayer(true);
+  const handleBack = () => {
+    window.location.href = "/storybook";
   };
 
-  const handleEditOriginal = () => {
-    window.location.href = `/entry/${chapter.id}`;
+  const handlePlayNarration = () => {
+    setIsPlaying(!isPlaying);
+    if (!isPlaying) {
+      setTimeout(() => setIsPlaying(false), 5000);
+    }
+  };
+
+  const handleSaveChapter = () => {
+    setIsSaved(true);
+    setTimeout(() => {
+      window.location.href = "/storybook";
+    }, 1000);
+  };
+
+  const handleShare = () => {
+    alert("Sharing functionality coming soon!");
+  };
+
+  const handleSaveEdits = async () => {
+    if (!chapter) return;
+
+    try {
+      const { error } = await supabase
+        .from("journal_chapters")
+        .update({
+          title: editTitle,
+          content: editContent,
+          summary: editSummary,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", chapter.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setChapter({
+        ...chapter,
+        title: editTitle,
+        content: editContent,
+        summary: editSummary,
+      });
+
+      setShowEdit(false);
+      alert("Chapter updated successfully!");
+    } catch (error) {
+      console.error("Error saving edits:", error);
+      alert("Failed to save changes.");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setShowEdit(false);
+    setEditTitle(chapter?.title || "");
+    setEditContent(chapter?.content || "");
+    setEditSummary(chapter?.summary || "");
+    setActiveTab("write");
+  };
+
+  const insertMarkdown = (before: string, after = "") => {
+    const textarea = document.getElementById(
+      "chapter-textarea"
+    ) as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = editContent.substring(start, end);
+    const newText =
+      editContent.substring(0, start) +
+      before +
+      selectedText +
+      after +
+      editContent.substring(end);
+
+    setEditContent(newText);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(
+        start + before.length,
+        start + before.length + selectedText.length
+      );
+    }, 0);
   };
 
   const renderMarkdown = (text: string) => {
@@ -122,183 +196,397 @@ export default function ChapterPage({ params }: { params: Promise<{ id: string }
       .replace(/\*(.*?)\*/g, "<em>$1</em>")
       .replace(
         /^### (.*$)/gim,
-        '<h3 class="text-lg font-semibold mb-2">$1</h3>'
+        '<h3 class="text-lg font-semibold mb-2 text-amber-900">$1</h3>'
       )
-      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mb-3">$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mb-4">$1</h1>')
-      .replace(/^- (.*$)/gim, '<li class="ml-4">• $1</li>')
       .replace(
-        /\[([^\]]+)\]$$([^)]+)$$/g,
-        '<a href="$2" class="text-amber-600 underline">$1</a>'
+        /^## (.*$)/gim,
+        '<h2 class="text-xl font-semibold mb-3 text-amber-900">$1</h2>'
       )
+      .replace(
+        /^# (.*$)/gim,
+        '<h1 class="text-2xl font-bold mb-4 text-amber-900">$1</h1>'
+      )
+      .replace(/^- (.*$)/gim, '<li class="ml-4 mb-1">• $1</li>')
+      .replace(
+        /\[([^\]]+)\]\(([^)]+)\)/g,
+        '<a href="$2" class="text-amber-600 underline hover:text-amber-800">$1</a>'
+      )
+      .replace(/\n\n/g, '</p><p class="mb-4">')
       .replace(/\n/g, "<br>");
   };
 
-  const moodColors = {
-    triumphant: "bg-yellow-100 text-yellow-800 border-yellow-300",
-    thoughtful: "bg-purple-100 text-purple-800 border-purple-300",
-    excited: "bg-orange-100 text-orange-800 border-orange-300",
-    peaceful: "bg-green-100 text-green-800 border-green-300",
-    determined: "bg-blue-100 text-blue-800 border-blue-300",
-    joyful: "bg-pink-100 text-pink-800 border-pink-300",
-  };
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
+          <p className="font-serif text-lg text-amber-700">
+            Loading your epic chapter...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !chapter) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="font-serif text-lg text-red-700 mb-4">
+            {error || "Failed to load chapter."}
+          </p>
+          <button
+            onClick={handleBack}
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen parchment-bg">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50">
+      {/* Header */}
+      <div className="border-b border-amber-200 bg-white/80 backdrop-blur-sm shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <button
+                onClick={handleBack}
+                className="mr-4 flex items-center px-3 py-2 text-amber-700 hover:text-amber-900 hover:bg-amber-100 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </button>
+              <div>
+                <h1 className="text-3xl font-bold text-amber-900 font-serif">
+                  Your Epic Chapter
+                </h1>
+                <p className="text-amber-700 mt-1 font-serif">
+                  {showEdit
+                    ? "Edit your story"
+                    : "Behold your story, transformed"}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              {!showEdit && (
+                <button
+                  onClick={handleShare}
+                  className="flex items-center px-4 py-2 border border-amber-300 text-amber-700 hover:bg-amber-50 rounded-lg font-serif bg-white/70 transition-colors"
+                >
+                  <Share className="w-4 h-4 mr-2" />
+                  Share
+                </button>
+              )}
+              <button
+                onClick={handleSaveChapter}
+                disabled={isSaved}
+                className="flex items-center px-4 py-2 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700 text-white rounded-lg font-serif transition-colors disabled:opacity-70"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {isSaved ? "Saved!" : "Save Chapter"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Chapter Content */}
           <div className="lg:col-span-2">
-            <Card className="fantasy-border bg-white/90 backdrop-blur-sm">
-              <CardHeader>
+            <div className="bg-white/90 backdrop-blur-sm border border-amber-200 rounded-lg shadow-lg overflow-hidden">
+              <div className="p-6 border-b border-amber-100">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant="outline"
-                      className="border-amber-300 text-amber-700"
-                    >
-                      Chapter {chapter.id}
-                    </Badge>
-                    <Badge
-                      className={`${
-                        moodColors[chapter.mood as keyof typeof moodColors]
-                      } capitalize`}
-                    >
-                      {chapter.mood}
-                    </Badge>
+                  <div className="flex-1">
+                    {showEdit ? (
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="w-full p-2 border border-amber-200 rounded-md focus:border-amber-500 font-serif text-2xl text-amber-900 bg-transparent"
+                        placeholder="Chapter title..."
+                      />
+                    ) : (
+                      <h2 className="text-2xl font-bold text-amber-900 mb-2 font-serif">
+                        {chapter.title}
+                      </h2>
+                    )}
+                    {!showEdit && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="px-3 py-1 border border-amber-300 text-amber-700 rounded-full text-sm font-serif bg-white/70">
+                          Generated Chapter
+                        </span>
+                        <span className="px-3 py-1 border border-blue-300 text-blue-700 rounded-full text-sm font-serif bg-white/70 capitalize">
+                          {chapter.storyTone?.replace("-", " ") ||
+                            "Epic Fantasy"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    {!showEdit ? (
+                      <>
+                        <button
+                          onClick={handlePlayNarration}
+                          className="flex items-center px-4 py-2 border border-amber-300 text-amber-700 hover:bg-amber-50 rounded-lg bg-white/70 transition-colors"
+                        >
+                          {isPlaying ? (
+                            <>
+                              <VolumeX className="w-4 h-4 mr-2" /> Stop
+                            </>
+                          ) : (
+                            <>
+                              <Play className="w-4 h-4 mr-2" /> Listen
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => setShowEdit(true)}
+                          className="flex items-center px-4 py-2 border border-amber-300 text-amber-700 hover:bg-amber-50 rounded-lg bg-white/70 transition-colors"
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => insertMarkdown("**", "**")}
+                          className="p-2 border border-amber-300 text-amber-700 hover:bg-amber-50 rounded bg-white/70 transition-colors"
+                          title="Bold"
+                        >
+                          <Bold className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => insertMarkdown("*", "*")}
+                          className="p-2 border border-amber-300 text-amber-700 hover:bg-amber-50 rounded bg-white/70 transition-colors"
+                          title="Italic"
+                        >
+                          <Italic className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => insertMarkdown("- ")}
+                          className="p-2 border border-amber-300 text-amber-700 hover:bg-amber-50 rounded bg-white/70 transition-colors"
+                          title="List"
+                        >
+                          <List className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => insertMarkdown("[", "](url)")}
+                          className="p-2 border border-amber-300 text-amber-700 hover:bg-amber-50 rounded bg-white/70 transition-colors"
+                          title="Link"
+                        >
+                          <Link className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={handleSaveEdits}
+                          className="flex items-center px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded transition-colors"
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          Save
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="p-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded bg-white/70 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="prose prose-amber max-w-none">
-                  <div className="font-crimson text-base leading-relaxed text-amber-900 space-y-4">
-                    {chapter.narrative
-                      .split("\n\n")
-                      .map((paragraph: string, index: number) => (
-                        <p key={index} className="text-justify">
-                          {paragraph}
-                        </p>
-                      ))}
+              </div>
+
+              <div className="p-6">
+                {showEdit ? (
+                  <div className="w-full">
+                    {/* Tab Navigation */}
+                    <div className="flex mb-4 border-b border-amber-200">
+                      <button
+                        onClick={() => setActiveTab("write")}
+                        className={`flex items-center px-4 py-2 font-serif transition-colors ${
+                          activeTab === "write"
+                            ? "border-b-2 border-amber-600 text-amber-900"
+                            : "text-amber-700 hover:text-amber-900"
+                        }`}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Write
+                      </button>
+                      <button
+                        onClick={() => setActiveTab("preview")}
+                        className={`flex items-center px-4 py-2 font-serif transition-colors ${
+                          activeTab === "preview"
+                            ? "border-b-2 border-amber-600 text-amber-900"
+                            : "text-amber-700 hover:text-amber-900"
+                        }`}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Preview
+                      </button>
+                    </div>
+
+                    {/* Tab Content */}
+                    {activeTab === "write" ? (
+                      <textarea
+                        id="chapter-textarea"
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        className="w-full min-h-[500px] p-4 border border-amber-200 rounded-md focus:border-amber-500 resize-none font-serif text-base leading-relaxed bg-white"
+                        placeholder="Edit your chapter here..."
+                      />
+                    ) : (
+                      <div className="min-h-[500px] p-4 border border-amber-200 rounded-md bg-amber-50/30">
+                        <div
+                          className="font-serif text-base leading-relaxed text-amber-900 prose prose-amber max-w-none"
+                          dangerouslySetInnerHTML={{
+                            __html: `<p class="mb-4">${renderMarkdown(
+                              editContent || ""
+                            )}</p>`,
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    <div className="mt-4 text-sm text-amber-600 font-serif">
+                      {editContent.length} characters • Use markdown formatting
+                      to enhance your chapter
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                ) : (
+                  <div className="prose prose-amber max-w-none">
+                    <div
+                      className="font-serif text-base leading-relaxed text-amber-900 space-y-4"
+                      dangerouslySetInnerHTML={{
+                        __html: `<p class="mb-4">${renderMarkdown(
+                          chapter.content || ""
+                        )}</p>`,
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Chapter Summary */}
-            <Card className="chapter-card border-amber-200">
-              <CardHeader>
-                <CardTitle className="font-cinzel text-lg text-amber-900">
+            <div className="bg-white/90 backdrop-blur-sm border border-amber-200 rounded-lg shadow-lg overflow-hidden">
+              <div className="p-4 border-b border-amber-100">
+                <h3 className="text-lg font-bold text-amber-900 font-serif">
                   Chapter Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="font-crimson text-sm text-amber-800 leading-relaxed">
-                  {chapter.summary}
-                </p>
-              </CardContent>
-            </Card>
+                </h3>
+              </div>
+              <div className="p-4">
+                {showEdit ? (
+                  <textarea
+                    value={editSummary}
+                    onChange={(e) => setEditSummary(e.target.value)}
+                    className="w-full min-h-[100px] p-3 border border-amber-200 rounded-md focus:border-amber-500 resize-none font-serif text-sm bg-white"
+                    placeholder="Edit chapter summary..."
+                  />
+                ) : (
+                  <p className="font-serif text-sm text-amber-800 leading-relaxed">
+                    {chapter.summary}
+                  </p>
+                )}
+              </div>
+            </div>
 
-            {/* Narration Controls */}
-            <Card className="chapter-card border-amber-200">
-              <CardHeader>
-                <CardTitle className="font-cinzel text-lg text-amber-900">
+            {/* Narration Info */}
+            <div className="bg-white/90 backdrop-blur-sm border border-amber-200 rounded-lg shadow-lg overflow-hidden">
+              <div className="p-4 border-b border-amber-100">
+                <h3 className="text-lg font-bold text-amber-900 font-serif">
                   Narration
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button
-                  onClick={handlePlayNarration}
-                  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 font-crimson"
-                >
-                  <Volume2 className="w-4 h-4 mr-2" />
-                  Listen to Narration
-                </Button>
-                <div className="text-sm font-crimson text-amber-700">
-                  <p className="mb-2">
-                    Narrator: <span className="font-semibold">Wise Sage</span>
-                  </p>
-                  <p>
-                    Background music:{" "}
-                    <span className="font-semibold">Epic Adventure</span>
-                  </p>
+                </h3>
+              </div>
+              <div className="p-4 space-y-2 text-sm font-serif text-amber-700">
+                <p>
+                  Narrator:{" "}
+                  <span className="font-semibold capitalize">
+                    {chapter.narrator?.replace("-", " ") || "Wise Sage"}
+                  </span>
+                </p>
+                <p>
+                  Story Tone:{" "}
+                  <span className="font-semibold capitalize">
+                    {chapter.storyTone?.replace("-", " ") || "Epic Fantasy"}
+                  </span>
+                </p>
+                <p>
+                  Background music:{" "}
+                  <span className="font-semibold">Epic Adventure</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Markdown Guide (only in edit mode) */}
+            {showEdit && (
+              <div className="bg-white/90 backdrop-blur-sm border border-amber-200 rounded-lg shadow-lg overflow-hidden">
+                <div className="p-4 border-b border-amber-100">
+                  <h3 className="text-lg font-bold text-amber-900 font-serif">
+                    Markdown Guide
+                  </h3>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="p-4">
+                  <div className="space-y-2 text-sm font-serif text-amber-700">
+                    <div className="flex justify-between">
+                      <span>**Bold**</span>
+                      <span className="font-bold">Bold</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>*Italic*</span>
+                      <span className="italic">Italic</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span># Heading</span>
+                      <span className="font-semibold">Heading</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>- List item</span>
+                      <span>• List item</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>[Link](url)</span>
+                      <span className="text-amber-600 underline">Link</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Original Entry */}
-            <Card className="chapter-card border-amber-200">
-              <CardHeader>
-                <CardTitle className="font-cinzel text-lg text-amber-900">
-                  Your Original Entry
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-amber-50 p-3 rounded border border-amber-200 mb-3">
-                  <div
-                    className="font-crimson text-sm text-amber-800 leading-relaxed prose prose-amber max-w-none"
-                    dangerouslySetInnerHTML={{
-                      __html: renderMarkdown(chapter.originalEntry),
-                    }}
-                  />
+            {chapter.originalEntry && (
+              <div className="bg-white/90 backdrop-blur-sm border border-amber-200 rounded-lg shadow-lg overflow-hidden">
+                <div className="p-4 border-b border-amber-100">
+                  <h3 className="text-lg font-bold text-amber-900 font-serif">
+                    Your Original Entry
+                  </h3>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleEditOriginal}
-                  className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 font-crimson bg-transparent"
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit Original Entry
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Navigation */}
-            <Card className="chapter-card border-amber-200">
-              <CardHeader>
-                <CardTitle className="font-cinzel text-lg text-amber-900">
-                  Navigation
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button
-                  variant="outline"
-                  className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 font-crimson bg-transparent"
-                  onClick={() => (window.location.href = "/entry/new")}
-                >
-                  Write New Entry
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 font-crimson bg-transparent"
-                  onClick={() => (window.location.href = "/storybook")}
-                >
-                  Browse All Chapters
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 font-crimson bg-transparent"
-                  onClick={() => (window.location.href = "/dashboard")}
-                >
-                  Back to Dashboard
-                </Button>
-              </CardContent>
-            </Card>
+                <div className="p-4">
+                  <div className="bg-amber-50 p-3 rounded border border-amber-200">
+                    <div
+                      className="font-serif text-sm text-amber-800 leading-relaxed prose prose-amber max-w-none"
+                      dangerouslySetInnerHTML={{
+                        __html: `<p>${renderMarkdown(
+                          chapter.originalEntry || ""
+                        )}</p>`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
-
-      {/* Narration Player */}
-      <NarrationPlayer
-        chapterTitle={chapter.title}
-        isVisible={showNarrationPlayer}
-        onClose={() => {
-          setShowNarrationPlayer(false);
-        }}
-      />
     </div>
   );
 }
