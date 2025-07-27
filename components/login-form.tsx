@@ -225,18 +225,18 @@ const AuthButton: React.FC<AuthButtonProps> = ({
   );
 };
 
-const AuthDivider: React.FC<{ text?: string }> = ({
-  text = UI_TEXT.dividerText,
-}) => (
-  <div className="relative my-6">
-    <div className="absolute inset-0 flex items-center">
-      <span className="w-full border-t border-amber-200" />
-    </div>
-    <div className="relative flex justify-center text-base uppercase">
-      <span className="bg-white px-2 text-amber-600 font-crimson">{text}</span>
-    </div>
-  </div>
-);
+// const AuthDivider: React.FC<{ text?: string }> = ({
+//   text = UI_TEXT.dividerText,
+// }) => (
+//   <div className="relative my-6">
+//     <div className="absolute inset-0 flex items-center">
+//       <span className="w-full border-t border-amber-200" />
+//     </div>
+//     <div className="relative flex justify-center text-base uppercase">
+//       <span className="bg-white px-2 text-amber-600 font-crimson">{text}</span>
+//     </div>
+//   </div>
+// );
 
 interface AuthFooterProps {
   showSignUpLink?: boolean;
@@ -372,7 +372,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     isLoading,
     updateField,
     handleLogin,
-    handleGoogleAuth,
+    // handleGoogleAuth,
   } = useLoginForm(redirectTo);
 
   return (
@@ -412,15 +412,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           </AuthButton>
         </form>
 
-        <AuthDivider />
+        {/* <AuthDivider /> */}
 
-        <AuthButton
+        {/* <AuthButton
           variant="outline"
           onClick={handleGoogleAuth}
           isLoading={isLoading}
         >
           {isLoading ? LOADING_MESSAGES.googleAuth : UI_TEXT.googleButton}
-        </AuthButton>
+        </AuthButton> */}
 
         <AuthFooter showSignUpLink={showSignUpLink} showForgotPassword={true} />
       </CardContent>

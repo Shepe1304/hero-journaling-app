@@ -171,41 +171,41 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error }) => {
   );
 };
 
-interface SocialAuthButtonProps {
-  provider: string;
-  onClick: () => void;
-  isLoading: boolean;
-  disabled?: boolean;
-}
+// interface SocialAuthButtonProps {
+//   provider: string;
+//   onClick: () => void;
+//   isLoading: boolean;
+//   disabled?: boolean;
+// }
 
-const SocialAuthButton: React.FC<SocialAuthButtonProps> = ({
-  provider,
-  onClick,
-  isLoading,
-  disabled = false,
-}) => (
-  <Button
-    onClick={onClick}
-    variant="outline"
-    className="w-full border-amber-200 hover:bg-amber-50 font-crimson bg-transparent text-lg"
-    disabled={isLoading || disabled}
-  >
-    {isLoading ? LOADING_MESSAGES.googleAuth : `Continue with ${provider}`}
-  </Button>
-);
+// const SocialAuthButton: React.FC<SocialAuthButtonProps> = ({
+//   provider,
+//   onClick,
+//   isLoading,
+//   disabled = false,
+// }) => (
+//   <Button
+//     onClick={onClick}
+//     variant="outline"
+//     className="w-full border-amber-200 hover:bg-amber-50 font-crimson bg-transparent text-lg"
+//     disabled={isLoading || disabled}
+//   >
+//     {isLoading ? LOADING_MESSAGES.googleAuth : `Continue with ${provider}`}
+//   </Button>
+// );
 
-const AuthDivider: React.FC = () => (
-  <div className="relative my-6">
-    <div className="absolute inset-0 flex items-center">
-      <span className="w-full border-t border-amber-200" />
-    </div>
-    <div className="relative flex justify-center text-base uppercase">
-      <span className="bg-white px-2 text-amber-600 font-crimson">
-        Or continue with
-      </span>
-    </div>
-  </div>
-);
+// const AuthDivider: React.FC = () => (
+//   <div className="relative my-6">
+//     <div className="absolute inset-0 flex items-center">
+//       <span className="w-full border-t border-amber-200" />
+//     </div>
+//     <div className="relative flex justify-center text-base uppercase">
+//       <span className="bg-white px-2 text-amber-600 font-crimson">
+//         Or continue with
+//       </span>
+//     </div>
+//   </div>
+// );
 
 interface AuthFooterProps {
   linkText: string;
@@ -333,7 +333,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
     isLoading,
     updateField,
     handleSignUp,
-    handleGoogleAuth,
+    // handleGoogleAuth,
   } = useSignUpForm(redirectTo);
 
   return (
@@ -399,13 +399,13 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
           </Button>
         </form>
 
-        <AuthDivider />
+        {/* <AuthDivider /> */}
 
-        <SocialAuthButton
+        {/* <SocialAuthButton
           provider="Google"
           onClick={handleGoogleAuth}
           isLoading={isLoading}
-        />
+        /> */}
 
         <AuthFooter
           prefixText="Already have an account?"
