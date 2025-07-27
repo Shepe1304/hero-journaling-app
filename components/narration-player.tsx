@@ -36,16 +36,16 @@ const narratorVoiceMap: Record<string, string> = {
 
 function stripMarkdown(md: string): string {
   return md
-    .replace(/^#{1,6}\s+/gm, "")         
-    .replace(/\*\*(.*?)\*\*/g, "$1")     
-    .replace(/\*(.*?)\*/g, "$1")         
-    .replace(/!\[.*?\]\(.*?\)/g, "")     
-    .replace(/\[(.*?)\]\(.*?\)/g, "$1")  
-    .replace(/`{1,3}(.*?)`{1,3}/g, "$1") 
-    .replace(/^- /gm, "")                
-    .replace(/>\s?/g, "")                
-    .replace(/\n+/g, " ")                
-    .replace(/\s+/g, " ")                
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/\*(.*?)\*/g, "$1")
+    .replace(/!\[.*?\]\(.*?\)/g, "")
+    .replace(/\[(.*?)\]\(.*?\)/g, "$1")
+    .replace(/`{1,3}(.*?)`{1,3}/g, "$1")
+    .replace(/^- /gm, "")
+    .replace(/>\s?/g, "")
+    .replace(/\n+/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
@@ -61,7 +61,9 @@ export default function NarrationPlayer({
   const [selectedVoice, setSelectedVoice] = useState("wise-sage");
   const [backgroundMusic, setBackgroundMusic] = useState(true);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [usingSystemTTS, setUsingSystemTTS] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const fetchElevenLabsAudio = async (
     text: string,
@@ -80,7 +82,7 @@ export default function NarrationPlayer({
           Accept: "audio/mpeg",
         },
         body: JSON.stringify({
-          text, // actual story content only
+          text,
           model_id: "eleven_monolingual_v1",
           voice_settings: {
             stability: tone === "peaceful" ? 0.8 : 0.4,
@@ -96,60 +98,110 @@ export default function NarrationPlayer({
     return URL.createObjectURL(blob);
   };
 
+  const playSystemTTS = (text: string) => {
+    // Cancel any existing speech
+    speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.voice =
+      speechSynthesis
+        .getVoices()
+        .find((v) => v.name.includes("Google") || v.default) || null;
+
+    utterance.onend = () => {
+      setIsPlaying(false);
+      utteranceRef.current = null;
+    };
+
+    utterance.onpause = () => setIsPlaying(false);
+    utterance.onresume = () => setIsPlaying(true);
+
+    speechSynthesis.speak(utterance);
+    utteranceRef.current = utterance;
+    setIsPlaying(true);
+    setUsingSystemTTS(true);
+  };
+
   useEffect(() => {
-    if (!isVisible) return;
+    if (!isVisible) {
+      // Clean up when player is hidden
+      if (usingSystemTTS) {
+        speechSynthesis.cancel();
+      } else if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      setIsPlaying(false);
+      return;
+    }
 
     const cleanText = stripMarkdown(text);
-
-    const playSystemTTS = () => {
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.voice =
-        speechSynthesis.getVoices().find((v) => v.name.includes("Google") || v.default) || null;
-      utterance.onend = () => setIsPlaying(false);
-      speechSynthesis.speak(utterance);
-    };
 
     const generateAudio = async () => {
       try {
         if (!cleanText || cleanText.length < 10) return;
         const url = await fetchElevenLabsAudio(cleanText, tone, selectedVoice);
         setAudioUrl(url);
+        setUsingSystemTTS(false);
       } catch {
         console.warn("ElevenLabs failed. Falling back to system TTS.");
-        playSystemTTS();
+        playSystemTTS(cleanText);
       }
     };
 
     generateAudio();
+
+    return () => {
+      // Clean up on unmount
+      if (usingSystemTTS) {
+        speechSynthesis.cancel();
+      } else if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
   }, [isVisible, text, tone, selectedVoice]);
 
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.volume = volume[0] / 100;
+    if (!audioRef.current) return;
+    audioRef.current.volume = volume[0] / 100;
   }, [volume]);
 
   const handlePlayPause = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    if (isPlaying) {
-      audio.pause();
-    } else {
-      audio.play();
+    if (usingSystemTTS) {
+      if (isPlaying) {
+        speechSynthesis.pause();
+      } else {
+        if (utteranceRef.current) {
+          speechSynthesis.resume();
+        } else {
+          playSystemTTS(stripMarkdown(text));
+        }
+      }
+    } else if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
     }
-
     setIsPlaying(!isPlaying);
   };
 
   const handleSkipBack = () => {
-    const audio = audioRef.current;
-    if (audio) audio.currentTime = Math.max(0, audio.currentTime - 15);
+    if (!usingSystemTTS && audioRef.current) {
+      audioRef.current.currentTime = Math.max(
+        0,
+        audioRef.current.currentTime - 15
+      );
+    }
   };
 
   const handleSkipForward = () => {
-    const audio = audioRef.current;
-    if (audio) audio.currentTime = Math.min(audio.duration, audio.currentTime + 15);
+    if (!usingSystemTTS && audioRef.current) {
+      audioRef.current.currentTime = Math.min(
+        audioRef.current.duration,
+        audioRef.current.currentTime + 15
+      );
+    }
   };
 
   if (!isVisible) return null;
@@ -171,7 +223,11 @@ export default function NarrationPlayer({
               variant="ghost"
               size="sm"
               onClick={() => {
-                audioRef.current?.pause();
+                if (usingSystemTTS) {
+                  speechSynthesis.cancel();
+                } else if (audioRef.current) {
+                  audioRef.current.pause();
+                }
                 setIsPlaying(false);
                 onClose();
               }}
@@ -181,110 +237,135 @@ export default function NarrationPlayer({
             </Button>
           </div>
 
-          <div className="mb-4">
-            {audioUrl && (
-              <audio
-                ref={audioRef}
-                src={audioUrl}
-                preload="auto"
-                // onTimeUpdate={() => setIsPlaying(audioRef.current?.paused === false)}
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-                onEnded={() => setIsPlaying(false)}
-              />
-            )}
-            <Slider
-              value={[audioRef.current?.currentTime || 0]}
-              max={audioRef.current?.duration || 1}
-              step={1}
-              onValueChange={(value) => {
-                if (audioRef.current) {
-                  audioRef.current.currentTime = value[0];
-                }
-              }}
-              className="w-full"
-            />
-            <div className="flex justify-between text-xs text-amber-600 mt-1">
-              <span>
-                {formatTime(audioRef.current?.currentTime || 0)}
-              </span>
-              <span>
-                {formatTime(audioRef.current?.duration || 0)}
-              </span>
-            </div>
-          </div>
+          {!usingSystemTTS && (
+            <>
+              <div className="mb-4">
+                {audioUrl && (
+                  <audio
+                    ref={audioRef}
+                    src={audioUrl}
+                    preload="auto"
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    onEnded={() => setIsPlaying(false)}
+                  />
+                )}
+                <Slider
+                  value={[audioRef.current?.currentTime || 0]}
+                  max={audioRef.current?.duration || 1}
+                  step={1}
+                  onValueChange={(value) => {
+                    if (audioRef.current) {
+                      audioRef.current.currentTime = value[0];
+                    }
+                  }}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-amber-600 mt-1">
+                  <span>{formatTime(audioRef.current?.currentTime || 0)}</span>
+                  <span>{formatTime(audioRef.current?.duration || 0)}</span>
+                </div>
+              </div>
 
-          <div className="flex items-center justify-between">
-            {/* Playback Controls */}
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSkipBack}
-                className="border-amber-300 text-amber-700 hover:bg-amber-50 bg-transparent"
-              >
-                <SkipBack className="w-4 h-4" />
-              </Button>
+              <div className="flex items-center justify-between">
+                {/* Playback Controls */}
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSkipBack}
+                    className="border-amber-300 text-amber-700 hover:bg-amber-50 bg-transparent"
+                  >
+                    <SkipBack className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    onClick={handlePlayPause}
+                    className="bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700"
+                  >
+                    {isPlaying ? (
+                      <Pause className="w-4 h-4" />
+                    ) : (
+                      <Play className="w-4 h-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSkipForward}
+                    className="border-amber-300 text-amber-700 hover:bg-amber-50 bg-transparent"
+                  >
+                    <SkipForward className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {/* Volume Control */}
+                <div className="flex items-center space-x-2">
+                  <Volume2 className="w-4 h-4 text-amber-700" />
+                  <Slider
+                    value={volume}
+                    max={100}
+                    step={1}
+                    onValueChange={setVolume}
+                    className="w-20"
+                  />
+                </div>
+
+                {/* Voice & Music Toggle */}
+                <div className="flex items-center space-x-2">
+                  <Select
+                    value={selectedVoice}
+                    onValueChange={setSelectedVoice}
+                    disabled={usingSystemTTS}
+                  >
+                    <SelectTrigger className="w-32 border-amber-200">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="wise-sage">Wise Sage</SelectItem>
+                      <SelectItem value="cheeky-bard">Cheeky Bard</SelectItem>
+                      <SelectItem value="stoic-chronicler">
+                        Stoic Chronicler
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setBackgroundMusic(!backgroundMusic)}
+                    className={`border-amber-300 ${
+                      backgroundMusic
+                        ? "bg-amber-50 text-amber-700"
+                        : "text-amber-600"
+                    }`}
+                    disabled={usingSystemTTS}
+                  >
+                    <Music className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {usingSystemTTS && (
+            <div className="flex justify-center">
               <Button
                 onClick={handlePlayPause}
                 className="bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700"
               >
                 {isPlaying ? (
-                  <Pause className="w-4 h-4" />
+                  <>
+                    <Pause className="w-4 h-4 mr-2" />
+                    Pause Narration
+                  </>
                 ) : (
-                  <Play className="w-4 h-4" />
+                  <>
+                    <Play className="w-4 h-4 mr-2" />
+                    Resume Narration
+                  </>
                 )}
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSkipForward}
-                className="border-amber-300 text-amber-700 hover:bg-amber-50 bg-transparent"
-              >
-                <SkipForward className="w-4 h-4" />
-              </Button>
             </div>
-
-            {/* Volume Control */}
-            <div className="flex items-center space-x-2">
-              <Volume2 className="w-4 h-4 text-amber-700" />
-              <Slider
-                value={volume}
-                max={100}
-                step={1}
-                onValueChange={setVolume}
-                className="w-20"
-              />
-            </div>
-
-            {/* Voice & Music Toggle */}
-            <div className="flex items-center space-x-2">
-              <Select value={selectedVoice} onValueChange={setSelectedVoice}>
-                <SelectTrigger className="w-32 border-amber-200">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="wise-sage">Wise Sage</SelectItem>
-                  <SelectItem value="cheeky-bard">Cheeky Bard</SelectItem>
-                  <SelectItem value="stoic-chronicler">
-                    Stoic Chronicler
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setBackgroundMusic(!backgroundMusic)}
-                className={`border-amber-300 ${
-                  backgroundMusic
-                    ? "bg-amber-50 text-amber-700"
-                    : "text-amber-600"
-                }`}
-              >
-                <Music className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>

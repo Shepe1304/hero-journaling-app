@@ -61,6 +61,7 @@ Turn your life into an epic story. **Odyscribe** is a fantasy-themed journaling 
      ```env
      NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
      NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+     NEXT_PUBLIC_ELEVENLABS_API_KEY=your_elevenlabs_api_key
      NEBIUS_API_KEY=your_nebius_api_key
      ```
 
@@ -162,6 +163,9 @@ Create a `.env.local` file with the following variables:
 # Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Expressive Text-To-Speech Integration
+NEXT_PUBLIC_ELEVENLABS_API_KEY=your_elevenlabs_api_key
 
 # AI Integration
 NEBIUS_API_KEY=your_nebius_api_key
