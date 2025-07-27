@@ -73,7 +73,7 @@ export default function OnboardingPage() {
       }
 
       // Insert a new chapter
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("journal_chapters")
         .insert({
           entry_id: entryId,

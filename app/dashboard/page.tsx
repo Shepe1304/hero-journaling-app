@@ -3,13 +3,11 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Calendar,
-  List,
-  BookOpen,
   Smile,
   Meh,
   Frown,
@@ -50,7 +48,11 @@ interface DashboardStats {
 // ================================
 const MOOD_ICONS: Record<
   MoodType,
-  { icon: React.ComponentType<any>; color: string; bg: string }
+  {
+    icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+    color: string;
+    bg: string;
+  }
 > = {
   happy: { icon: Smile, color: "text-yellow-500", bg: "bg-yellow-100" },
   sad: { icon: Frown, color: "text-blue-500", bg: "bg-blue-100" },
@@ -86,25 +88,6 @@ const navigateToEntry = (entryId: string, edit = false) => {
   window.location.href = `/entry/${entryId}${editParam}`;
 };
 
-// Helper function to validate and normalize mood
-const normalizeMood = (mood: any): MoodType => {
-  const validMoods: MoodType[] = [
-    "happy",
-    "sad",
-    "neutral",
-    "excited",
-    "peaceful",
-    "thoughtful",
-  ];
-
-  if (typeof mood === "string" && validMoods.includes(mood as MoodType)) {
-    return mood as MoodType;
-  }
-
-  // Default fallback
-  return "neutral";
-};
-
 // ================================
 // COMPONENTS
 // ================================
@@ -118,13 +101,15 @@ const MoodIcon = ({ mood }: { mood: MoodType }) => {
   );
 };
 
-interface EntryCardProps {
+const EntryCard = ({
+  entry,
+  onView,
+  onEdit,
+}: {
   entry: JournalEntry;
-  onView: (entryId: string) => void;
-  onEdit: (entryId: string, e: React.MouseEvent) => void;
-}
-
-const EntryCard = ({ entry, onView, onEdit }: any) => (
+  onView: (id: string) => void;
+  onEdit: (id: string, e: React.MouseEvent) => void;
+}) => (
   <div
     className="p-4 rounded-lg border border-amber-200 hover:border-amber-300 cursor-pointer transition-all duration-200 hover:shadow-md chapter-card group"
     onClick={() => onView(entry.id)}
@@ -234,7 +219,7 @@ export default function DashboardPage() {
   const stats = calculateStats(entries);
 
   const handleViewEntry = (entryId: string) => navigateToEntry(entryId);
-  const handleEditEntry = (entryId: string, e: any) => {
+  const handleEditEntry = (entryId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     navigateToEntry(entryId, true);
   };

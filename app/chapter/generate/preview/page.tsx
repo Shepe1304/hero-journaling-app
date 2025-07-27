@@ -12,7 +12,6 @@ import {
   Play,
   Save,
   Share,
-  Volume2,
   VolumeX,
   Edit,
   Eye,
@@ -24,12 +23,24 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
+interface Chapter {
+  id: string;
+  title: string;
+  content: string;
+  summary: string;
+  storyTone: string;
+  narrator: string;
+  narrative: string;
+  originalEntry: string;
+  chapterId: string;
+}
+
 export default function ChapterGeneratePage() {
   const searchParams = useSearchParams();
   const entryId = searchParams.get("entryId");
   const supabase = createClient();
 
-  const [chapter, setChapter] = useState<any>(null);
+  const [chapter, setChapter] = useState<Chapter>();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -102,10 +113,14 @@ export default function ChapterGeneratePage() {
           .update({ has_chapter: true })
           .eq("id", entryId);
 
-        const chapterData = {
-          ...generated,
+        const chapterData: Chapter = {
+          id: chapterRecord.id,
+          title: generated.title,
+          content: generated.narrative,
+          summary: generated.summary,
           narrator: chapterRecord.narrator,
           storyTone: chapterRecord.story_tone,
+          narrative: generated.narrative,
           originalEntry: entry.content,
           chapterId: chapterRecord.id,
         };
@@ -151,17 +166,21 @@ export default function ChapterGeneratePage() {
           summary: editSummary,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", chapter.chapterId);
+        .eq("id", chapter?.chapterId);
 
       if (error) throw error;
 
       // Update local state
-      setChapter({
-        ...chapter,
-        title: editTitle,
-        narrative: editContent,
-        summary: editSummary,
-      });
+      setChapter((prev) =>
+        prev
+          ? {
+              ...prev,
+              title: editTitle,
+              narrative: editContent,
+              summary: editSummary,
+            }
+          : undefined
+      );
 
       setShowEdit(false);
       alert("Chapter updated successfully!");

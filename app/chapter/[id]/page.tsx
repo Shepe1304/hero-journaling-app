@@ -90,9 +90,9 @@ export default function ChapterDisplayPage() {
         setEditTitle(chapterData.title || "");
         setEditContent(chapterData.content || "");
         setEditSummary(chapterData.summary || "");
-      } catch (err: any) {
-        console.error("Error fetching chapter:", err);
-        setError(err.message);
+      } catch (err) {
+        console.error("Error fetching chapter", err);
+        // setError(err.message);
       } finally {
         setLoading(false);
       }
