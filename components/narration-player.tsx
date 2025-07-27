@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
@@ -22,58 +22,103 @@ import {
 
 interface NarrationPlayerProps {
   chapterTitle: string;
+  text: string;
+  tone: string;
   isVisible: boolean;
   onClose: () => void;
 }
 
+const narratorVoiceMap: Record<string, string> = {
+  "wise-sage": "EXAVITQu4vr4xnSDxMaL", // Rachel
+  "cheeky-bard": "21m00Tcm4TlvDq8ikWAM", // Adam
+  "stoic-chronicler": "AZnzlk1XvdvUeBnXmlld", // Bella
+};
+
 export default function NarrationPlayer({
   chapterTitle,
+  text,
+  tone,
   isVisible,
   onClose,
 }: NarrationPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration] = useState(300); // 5 minutes in seconds
   const [volume, setVolume] = useState([75]);
   const [selectedVoice, setSelectedVoice] = useState("wise-sage");
   const [backgroundMusic, setBackgroundMusic] = useState(true);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isPlaying) {
-      interval = setInterval(() => {
-        setCurrentTime((prev) => {
-          if (prev >= duration) {
-            setIsPlaying(false);
-            return duration;
-          }
-          return prev + 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isPlaying, duration]);
+  const fetchElevenLabsAudio = async (
+    text: string,
+    tone: string,
+    narrator: string
+  ): Promise<string> => {
+    const voiceId = narratorVoiceMap[narrator] || narratorVoiceMap["wise-sage"];
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
+    const response = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      {
+        method: "POST",
+        headers: {
+          "xi-api-key": process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY!,
+          "Content-Type": "application/json",
+          Accept: "audio/mpeg",
+        },
+        body: JSON.stringify({
+          text, // actual story content only
+          model_id: "eleven_monolingual_v1",
+          voice_settings: {
+            stability: tone === "peaceful" ? 0.8 : 0.4,
+            similarity_boost: tone === "triumphant" ? 0.75 : 0.5,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) throw new Error("TTS generation failed");
+
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
   };
 
+  useEffect(() => {
+    if (!isVisible) return;
+
+    const generateAudio = async () => {
+      const url = await fetchElevenLabsAudio(text, tone, selectedVoice);
+      setAudioUrl(url);
+    };
+
+    generateAudio();
+  }, [isVisible, text, tone, selectedVoice]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = volume[0] / 100;
+  }, [volume]);
+
   const handlePlayPause = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (isPlaying) {
+      audio.pause();
+    } else {
+      audio.play();
+    }
+
     setIsPlaying(!isPlaying);
   };
 
-  const handleSeek = (value: number[]) => {
-    setCurrentTime(value[0]);
-  };
-
   const handleSkipBack = () => {
-    setCurrentTime(Math.max(0, currentTime - 15));
+    const audio = audioRef.current;
+    if (audio) audio.currentTime = Math.max(0, audio.currentTime - 15);
   };
 
   const handleSkipForward = () => {
-    setCurrentTime(Math.min(duration, currentTime + 15));
+    const audio = audioRef.current;
+    if (audio) audio.currentTime = Math.min(audio.duration, audio.currentTime + 15);
   };
 
   if (!isVisible) return null;
@@ -94,25 +139,44 @@ export default function NarrationPlayer({
             <Button
               variant="ghost"
               size="sm"
-              onClick={onClose}
+              onClick={() => {
+                audioRef.current?.pause();
+                setIsPlaying(false);
+                onClose();
+              }}
               className="text-amber-700 hover:text-amber-900"
             >
               ×
             </Button>
           </div>
 
-          {/* Progress Bar */}
           <div className="mb-4">
+            {audioUrl && (
+              <audio
+                ref={audioRef}
+                src={audioUrl}
+                preload="auto"
+                onEnded={() => setIsPlaying(false)}
+              />
+            )}
             <Slider
-              value={[currentTime]}
-              max={duration}
+              value={[audioRef.current?.currentTime || 0]}
+              max={audioRef.current?.duration || 1}
               step={1}
-              onValueChange={handleSeek}
+              onValueChange={(value) => {
+                if (audioRef.current) {
+                  audioRef.current.currentTime = value[0];
+                }
+              }}
               className="w-full"
             />
             <div className="flex justify-between text-xs text-amber-600 mt-1">
-              <span>{formatTime(currentTime)}</span>
-              <span>{formatTime(duration)}</span>
+              <span>
+                {formatTime(audioRef.current?.currentTime || 0)}
+              </span>
+              <span>
+                {formatTime(audioRef.current?.duration || 0)}
+              </span>
             </div>
           </div>
 
@@ -159,7 +223,7 @@ export default function NarrationPlayer({
               />
             </div>
 
-            {/* Settings */}
+            {/* Voice & Music Toggle */}
             <div className="flex items-center space-x-2">
               <Select value={selectedVoice} onValueChange={setSelectedVoice}>
                 <SelectTrigger className="w-32 border-amber-200">
@@ -191,4 +255,10 @@ export default function NarrationPlayer({
       </Card>
     </div>
   );
+}
+
+function formatTime(seconds: number) {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
