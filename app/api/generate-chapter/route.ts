@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
 
     const prompt = `
     You are a skilled storyteller AI. Transform the following journal entry into an epic narrative chapter using the Hero's Journey structure.
+    The hero should be the user, and the chapter should reflect their journey, challenges, and triumphs. Use the following parameters to guide your narrative:
 
     PARAMETERS:
     - Story Tone: ${storyTone}
