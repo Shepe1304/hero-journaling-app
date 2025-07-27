@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { BookOpen, Feather, Headphones, Sparkles } from "lucide-react";
+import { Feather, Headphones, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export default function LandingPage() {
