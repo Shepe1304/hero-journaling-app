@@ -7,6 +7,7 @@ import { Scroll, Sparkles, BookOpen, Users } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 const storyTones = [
   {
@@ -68,7 +69,14 @@ export default function OnboardingPage() {
       const userRes = await supabase.auth.getUser();
       const user = userRes.data.user;
       if (!user) {
-        alert("You must be logged in.");
+        toast.error("You must be logged in.", {
+          action: {
+            label: "Log In",
+            onClick: () => {
+              window.location.href = "/auth/login";
+            },
+          },
+        });
         return;
       }
 
@@ -87,7 +95,9 @@ export default function OnboardingPage() {
 
       if (error) {
         console.error(error);
-        alert("Failed to create chapter.");
+        toast.error("Failed to create chapter.", {
+          description: "Please try again later.",
+        });
         return;
       }
 
@@ -95,7 +105,9 @@ export default function OnboardingPage() {
       window.location.href = `/chapter/generate/preview?entryId=${entryId}`;
     } catch (err) {
       console.error(err);
-      alert("Something went wrong.");
+      toast.error("Something went wrong.", {
+        description: "Please try again later.",
+      });
     }
   };
 

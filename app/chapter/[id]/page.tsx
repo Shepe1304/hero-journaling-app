@@ -19,6 +19,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useParams } from "next/navigation";
 import NarrationPlayer from "@/components/narration-player";
 import { MusicConsentPopup } from "@/components/music-consent-popup";
+import { toast } from "sonner";
 
 interface Chapter {
   title: string;
@@ -319,7 +320,7 @@ export default function ChapterDisplayPage() {
   };
 
   const handleShare = () => {
-    alert("Sharing functionality coming soon!");
+    toast.success("Sharing functionality coming soon!");
   };
 
   const handleSaveEdits = async () => {
@@ -347,10 +348,14 @@ export default function ChapterDisplayPage() {
       });
 
       setShowEdit(false);
-      alert("Chapter updated successfully!");
+      toast.success("Chapter updated successfully!", {
+        description: "Your chapter has been added to your storybook.",
+      });
     } catch (error) {
       console.error("Error saving edits:", error);
-      alert("Failed to save changes.");
+      toast.error("Failed to save changes.", {
+        description: "Your chapter has been added to your storybook.",
+      });
     }
   };
 
