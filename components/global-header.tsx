@@ -72,6 +72,10 @@ export default function GlobalHeader() {
     window.location.reload();
   };
 
+  const handleProfile = async () => {
+    window.location.href = "/profile";
+  };
+
   const navigationItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
     { href: "/storybook", label: "Storybook", icon: BookOpen },
@@ -174,6 +178,14 @@ export default function GlobalHeader() {
                           {user.email}
                         </div>
                       </div>
+                      <Button
+                        variant="outline"
+                        className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 font-crimson bg-transparent mt-2"
+                        onClick={handleProfile}
+                      >
+                        <User className="w-4 h-4 mr-2" />
+                        Profile
+                      </Button>
                       <Button
                         variant="outline"
                         className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 font-crimson bg-transparent mt-2"
