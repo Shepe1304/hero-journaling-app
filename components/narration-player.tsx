@@ -28,11 +28,29 @@ interface NarrationPlayerProps {
   onClose: () => void;
 }
 
+const useSystemTTS = true; // Set to true if ElevenLabs is unavailable
+
 const narratorVoiceMap: Record<string, string> = {
   "wise-sage": "EXAVITQu4vr4xnSDxMaL", // Rachel
   "cheeky-bard": "21m00Tcm4TlvDq8ikWAM", // Adam
   "stoic-chronicler": "AZnzlk1XvdvUeBnXmlld", // Bella
 };
+
+function stripMarkdown(md: string): string {
+  return md
+    .replace(/^#{1,6}\s+/gm, "")         
+    .replace(/\*\*(.*?)\*\*/g, "$1")     
+    .replace(/\*(.*?)\*/g, "$1")         
+    .replace(/!\[.*?\]\(.*?\)/g, "")     
+    .replace(/\[(.*?)\]\(.*?\)/g, "$1")  
+    .replace(/`{1,3}(.*?)`{1,3}/g, "$1") 
+    .replace(/^- /gm, "")                
+    .replace(/>\s?/g, "")                
+    .replace(/\n+/g, " ")                
+    .replace(/\s+/g, " ")                
+    .trim();
+}
+
 
 export default function NarrationPlayer({
   chapterTitle,
@@ -41,6 +59,7 @@ export default function NarrationPlayer({
   isVisible,
   onClose,
 }: NarrationPlayerProps) {
+  const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState([75]);
   const [selectedVoice, setSelectedVoice] = useState("wise-sage");
@@ -82,15 +101,32 @@ export default function NarrationPlayer({
   };
 
   useEffect(() => {
-    if (!isVisible) return;
+  if (!isVisible) return;
 
-    const generateAudio = async () => {
-      const url = await fetchElevenLabsAudio(text, tone, selectedVoice);
+  const cleanText = stripMarkdown(text);
+
+  const playSystemTTS = () => {
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.voice =
+      speechSynthesis.getVoices().find((v) => v.name.includes("Google") || v.default) || null;
+    utterance.onend = () => setIsPlaying(false);
+    speechSynthesis.speak(utterance);
+  };
+
+  const generateAudio = async () => {
+    try {
+      if (!cleanText || cleanText.length < 10) return;
+      const url = await fetchElevenLabsAudio(cleanText, tone, selectedVoice);
       setAudioUrl(url);
-    };
+    } catch (err) {
+      console.warn("ElevenLabs failed. Falling back to system TTS.");
+      playSystemTTS();
+    }
+  };
 
-    generateAudio();
-  }, [isVisible, text, tone, selectedVoice]);
+  generateAudio();
+}, [isVisible, text, tone, selectedVoice]);
+
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -156,6 +192,7 @@ export default function NarrationPlayer({
                 ref={audioRef}
                 src={audioUrl}
                 preload="auto"
+                onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime || 0)}
                 onEnded={() => setIsPlaying(false)}
               />
             )}
@@ -166,6 +203,7 @@ export default function NarrationPlayer({
               onValueChange={(value) => {
                 if (audioRef.current) {
                   audioRef.current.currentTime = value[0];
+                  setCurrentTime(value[0]);
                 }
               }}
               className="w-full"

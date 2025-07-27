@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useParams } from "next/navigation";
+import NarrationPlayer from "@/components/narration-player";
 
 interface Chapter {
   title: string;
@@ -107,9 +108,6 @@ export default function ChapterDisplayPage() {
 
   const handlePlayNarration = () => {
     setIsPlaying(!isPlaying);
-    if (!isPlaying) {
-      setTimeout(() => setIsPlaying(false), 5000);
-    }
   };
 
   const handleSaveChapter = () => {
@@ -587,6 +585,16 @@ export default function ChapterDisplayPage() {
           </div>
         </div>
       </div>
+      {!showEdit && chapter && (
+        <NarrationPlayer
+          chapterTitle={chapter.title}
+          text={chapter.content}
+          tone={chapter.storyTone}
+          isVisible={isPlaying}
+          onClose={() => setIsPlaying(false)}
+        />
+      )}
+      {isPlaying && <div style={{ height: "200px" }} />}
     </div>
   );
 }

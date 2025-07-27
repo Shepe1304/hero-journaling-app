@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import NarrationPlayer from "@/components/narration-player";
 import {
   ArrowLeft,
   Play,
@@ -146,7 +147,6 @@ export default function ChapterGeneratePage() {
 
   const handlePlayNarration = () => {
     setIsPlaying(!isPlaying);
-    if (!isPlaying) setTimeout(() => setIsPlaying(false), 5000);
   };
 
   const handleSaveChapter = () => {
@@ -609,6 +609,15 @@ export default function ChapterGeneratePage() {
           </div>
         </div>
       </div>
+      {!showEdit && chapter && (
+        <NarrationPlayer
+          chapterTitle={chapter.title}
+          text={chapter.narrative}
+          tone={chapter.storyTone}
+          isVisible={isPlaying}
+          onClose={() => setIsPlaying(false)}
+        />
+      )}
     </div>
   );
 }
