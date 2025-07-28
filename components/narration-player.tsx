@@ -244,7 +244,7 @@ export default function NarrationPlayer({
             setIsPlaying(true);
           }
         }, 100);
-      } catch (error) {
+      } catch {
         console.warn("ElevenLabs failed. Falling back to system TTS.");
         toast.error(
           "Failed to generate audio with ElevenLabs. Using system TTS instead.",
