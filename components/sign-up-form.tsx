@@ -45,7 +45,7 @@ interface FormFieldProps {
 // CONSTANTS & CONFIGURATION
 // ================================
 const FORM_CONFIG = {
-  emailRedirectPath: "/protected",
+  emailRedirectPath: "/",
   successRedirectPath: "/auth/sign-up-success",
   loginPath: "/auth/login",
 } as const;
