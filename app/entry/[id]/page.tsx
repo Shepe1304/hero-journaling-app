@@ -260,7 +260,7 @@ export default function EntryPage({
           <div className="lg:col-span-2">
             <Card className="fantasy-border bg-white/90 backdrop-blur-sm">
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex flex-col lg:flex-row md:flex-row">
                   <CardTitle className="font-cinzel text-xl text-amber-900">
                     {showPreview ? "Edit Your Story" : title || "Your Story"}
                   </CardTitle>

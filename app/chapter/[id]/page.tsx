@@ -36,6 +36,7 @@ const BackgroundMusicPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.7);
   const [showConsentPopup, setShowConsentPopup] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -119,14 +120,18 @@ const BackgroundMusicPlayer = () => {
     setVolume(newVolume);
   };
 
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
   return (
     <>
       {showConsentPopup && <MusicConsentPopup onConsent={handleConsent} />}
       <div className="fixed bottom-4 right-4 bg-white/90 backdrop-blur-sm border border-amber-200 rounded-lg shadow-lg p-3 flex items-center gap-3 z-50">
         <button
-          onClick={handleRewind}
+          onClick={toggleCollapse}
           className="p-2 text-amber-700 hover:bg-amber-100 rounded-full transition-colors"
-          title="Rewind 10 seconds"
+          title={isCollapsed ? "Expand player" : "Collapse player"}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -138,95 +143,122 @@ const BackgroundMusicPlayer = () => {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            className={`transition-transform ${
+              isCollapsed ? "" : "rotate-180"
+            }`}
           >
-            <polygon points="11 19 2 12 11 5 11 19"></polygon>
-            <polygon points="22 19 13 12 22 5 22 19"></polygon>
+            <polyline points="18 15 12 9 6 15"></polyline>
           </svg>
         </button>
 
-        <button
-          onClick={togglePlay}
-          className="p-2 text-amber-700 hover:bg-amber-100 rounded-full transition-colors"
-          title={isPlaying ? "Pause" : "Play"}
-        >
-          {isPlaying ? (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+        {!isCollapsed && (
+          <>
+            <button
+              onClick={handleRewind}
+              className="p-2 text-amber-700 hover:bg-amber-100 rounded-full transition-colors"
+              title="Rewind 10 seconds"
             >
-              <rect x="6" y="4" width="4" height="16"></rect>
-              <rect x="14" y="4" width="4" height="16"></rect>
-            </svg>
-          ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polygon points="11 19 2 12 11 5 11 19"></polygon>
+                <polygon points="22 19 13 12 22 5 22 19"></polygon>
+              </svg>
+            </button>
+
+            <button
+              onClick={togglePlay}
+              className="p-2 text-amber-700 hover:bg-amber-100 rounded-full transition-colors"
+              title={isPlaying ? "Pause" : "Play"}
             >
-              <polygon points="5 3 19 12 5 21 5 3"></polygon>
-            </svg>
-          )}
-        </button>
+              {isPlaying ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="6" y="4" width="4" height="16"></rect>
+                  <rect x="14" y="4" width="4" height="16"></rect>
+                </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+              )}
+            </button>
 
-        <button
-          onClick={handleForward}
-          className="p-2 text-amber-700 hover:bg-amber-100 rounded-full transition-colors"
-          title="Forward 10 seconds"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polygon points="13 19 22 12 13 5 13 19"></polygon>
-            <polygon points="2 19 11 12 2 5 2 19"></polygon>
-          </svg>
-        </button>
+            <button
+              onClick={handleForward}
+              className="p-2 text-amber-700 hover:bg-amber-100 rounded-full transition-colors"
+              title="Forward 10 seconds"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polygon points="13 19 22 12 13 5 13 19"></polygon>
+                <polygon points="2 19 11 12 2 5 2 19"></polygon>
+              </svg>
+            </button>
 
-        <div className="flex items-center gap-2 ml-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-amber-600"
-          >
-            <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
-          </svg>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value={volume}
-            onChange={handleVolumeChange}
-            className="w-20 accent-amber-600"
-          />
-        </div>
+            <div className="flex items-center gap-2 ml-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-amber-600"
+              >
+                <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+              </svg>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={volume}
+                onChange={handleVolumeChange}
+                className="w-20 accent-amber-600"
+              />
+            </div>
+          </>
+        )}
       </div>
     </>
   );
@@ -456,8 +488,8 @@ export default function ChapterDisplayPage() {
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50">
       {/* Header */}
       <div className="border-b border-amber-200 bg-white/80 backdrop-blur-sm shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between">
+          <div className="flex items-center justify-between flex-col sm:flex-row w-full sm:w-auto">
             <div className="flex items-center">
               <button
                 onClick={handleBack}
@@ -477,7 +509,7 @@ export default function ChapterDisplayPage() {
                 </p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 mt-4 lg:mt-0 md:mt-0">
               {!showEdit && (
                 <button
                   onClick={handleShare}
@@ -506,7 +538,7 @@ export default function ChapterDisplayPage() {
           <div className="lg:col-span-2">
             <div className="bg-white/90 backdrop-blur-sm border border-amber-200 rounded-lg shadow-lg overflow-hidden">
               <div className="p-6 border-b border-amber-100">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-col lg:flex-row md:flex-row">
                   <div className="flex-1">
                     {showEdit ? (
                       <input
@@ -533,12 +565,12 @@ export default function ChapterDisplayPage() {
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 ml-4">
+                  <div className="flex items-center gap-2 ml-4 mt-2 lg:mt-0 md:mt-0">
                     {!showEdit ? (
                       <>
                         <button
                           onClick={handlePlayNarration}
-                          className="flex items-center px-4 py-2 border border-amber-300 text-amber-700 hover:bg-amber-50 rounded-lg bg-white/70 transition-colors"
+                          className="flex flex-row items-center px-4 py-2 border border-amber-300 text-amber-700 hover:bg-amber-50 rounded-lg bg-white/70 transition-colors"
                         >
                           {isPlaying ? (
                             <>
