@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Scroll, Sparkles, BookOpen, Users } from "lucide-react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -113,25 +112,6 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen parchment-bg flex flex-col">
-      {/* Top navigation with Auth Buttons */}
-      <nav className="w-full flex justify-between items-center p-4 border-b border-amber-200 bg-white/70 backdrop-blur-sm">
-        <h1 className="font-cinzel text-2xl text-amber-900">Odyscribe</h1>
-        <div className="flex gap-4">
-          <Link
-            href="/auth/login"
-            className="px-4 py-2 text-amber-700 border border-amber-300 rounded-lg hover:bg-amber-50 transition"
-          >
-            Log In
-          </Link>
-          <Link
-            href="/auth/sign-up"
-            className="px-4 py-2 bg-gradient-to-r from-amber-600 to-yellow-600 text-white rounded-lg shadow hover:from-amber-700 hover:to-yellow-700 transition"
-          >
-            Sign Up
-          </Link>
-        </div>
-      </nav>
-
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-4xl w-full">
           {/* Header */}

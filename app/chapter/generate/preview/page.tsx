@@ -135,6 +135,7 @@ export default function ChapterGeneratePage() {
         console.error(err);
         toast.error("Something went wrong while generating the chapter.", {
           description: "Please try again by reloading the page.",
+          duration: 20000,
           action: {
             label: "Reload",
             onClick: () => {
