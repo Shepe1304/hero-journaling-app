@@ -480,7 +480,7 @@ export default function ProfilePage() {
             Your story is waiting to be told. Every word matters, every moment
             counts.
           </p>
-          <div className="flex justify-center gap-4">
+          <div className="flex justify-center gap-4 flex-col lg:flex-row md:flex-row">
             <Button
               className="bg-white text-amber-700 hover:bg-amber-50 px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105"
               onClick={() => (window.location.href = `/entry/new`)}

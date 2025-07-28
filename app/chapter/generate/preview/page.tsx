@@ -290,8 +290,8 @@ export default function ChapterGeneratePage() {
       {/* Header */}
       <div className="border-b border-amber-200 bg-white/80 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
+          <div className="flex items-center justify-between flex-col lg:flex-row md:flex-row">
+            <div className="flex items-center flex flex-col lg:flex-row md:flex-row">
               <Button
                 variant="ghost"
                 onClick={handleBack}
@@ -309,7 +309,7 @@ export default function ChapterGeneratePage() {
                 </p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-col lg:flex-row md:flex-row mt-4 lg:mt-0 md:mt-0">
               <Button
                 variant="outline"
                 onClick={handleShare}
@@ -337,7 +337,7 @@ export default function ChapterGeneratePage() {
           <div className="lg:col-span-2">
             <Card className="fantasy-border bg-white/90 backdrop-blur-sm">
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-col lg:flex-row md:flex-row">
                   <div className="flex-1">
                     {showEdit ? (
                       <input

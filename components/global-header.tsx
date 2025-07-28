@@ -11,7 +11,6 @@ import {
   Menu,
   X,
   User,
-  Settings,
   LogOut,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -290,20 +289,42 @@ export default function GlobalHeader() {
 
               {/* Mobile User Actions */}
               <div className="mt-4 pt-4 border-t border-amber-200 space-y-2">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-amber-700 hover:bg-amber-50"
-                >
-                  <Settings className="w-4 h-4 mr-3" />
-                  Settings
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-amber-700 hover:bg-amber-50"
-                >
-                  <LogOut className="w-4 h-4 mr-3" />
-                  Sign Out
-                </Button>
+                {user ? (
+                  <div className="flex flex-col items-center justify-between">
+                    <Button
+                      variant="outline"
+                      className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 font-crimson bg-transparent"
+                      onClick={handleProfile}
+                    >
+                      <User className="w-4 h-4 mr-2" />
+                      Profile
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 font-crimson bg-transparent"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Log out
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-between">
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="border-amber-300 text-amber-700 hover:bg-amber-50 font-crimson bg-transparent w-full"
+                    >
+                      <Link href="/auth/login">Sign In</Link>
+                    </Button>
+                    <Button
+                      asChild
+                      className="bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 font-crimson w-full"
+                    >
+                      <Link href="/auth/sign-up">Sign Up</Link>
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
