@@ -257,9 +257,20 @@ export default function StorybookPage() {
         setError(null);
 
         const supabase = createClient();
+
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+          throw new Error("User not found");
+        }
+
         const { data, error: supabaseError } = await supabase
           .from("journal_chapters")
           .select("*")
+          .eq("user_id", user.id)
           .order("created_at", { ascending: false });
 
         if (supabaseError) {
