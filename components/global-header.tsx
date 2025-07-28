@@ -11,7 +11,6 @@ import {
   Menu,
   X,
   User,
-  Settings,
   LogOut,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
